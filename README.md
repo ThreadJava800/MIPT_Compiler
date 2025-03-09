@@ -1,6 +1,6 @@
 # Compiler
 
-It is a simple compiler of PASCAL, which supports:
+It is a simple compiler of abstract language, which supports:
 1. Arithmetics
 2. Logic functions (and, or, not)
 3. Terminal output
