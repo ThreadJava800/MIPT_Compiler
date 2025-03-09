@@ -11,8 +11,13 @@
 }
 
 %code provides {
-    int yylex(yy::parser::semantic_type* yylval, yy::parser::location_type* yylloc);
+    int yylex(
+        yy::parser::semantic_type* yylval,
+        yy::parser::location_type* yylloc
+        );
 }
+
+%parse-param { Driver_t &driver }
 
 %token DECLARE
 %token <std::string> VAR_NAME
@@ -46,8 +51,8 @@
 
 %type <const VariableNode_t*> var_node
 %type <const ValueNode_t*> number_node
-%type <const AstNode_t*> expr
-%type <ProgramNode*> all_expr
+%type <const RuleNode_t*> expr
+%type <ProgramNode_t*> all_expr
 %type <const NonTerminalNode_t*> ast_node_leaf;
 %type <const NonTerminalNode_t*> ast_logic_node
 %type <const NonTerminalNode_t*> ast_node_and_or
@@ -62,15 +67,13 @@
 program_entry:
     all_expr
     {
-        graphDump($1);
-        delete $1;
     }
 ;
 
 all_expr:
     %empty
     {
-        $$ = new ProgramNode();
+        $$ = driver.root;
     }
 |
     all_expr expr
@@ -96,12 +99,17 @@ expr:
         $$ = new IfElseNode_t($3, $6, $10);
     }
 |
-    DECLARE var_node SEMICOLON
+    DECLARE VAR_NAME SEMICOLON
     {
         $$ = new DeclareNode_t($2);
     }
 |
-    var_node ASSIGN ast_logic_node SEMICOLON
+    DECLARE VAR_NAME ASSIGN ast_logic_node SEMICOLON
+    {
+        $$ = new NopRuleNode_t(new DeclareNode_t($2), new AssignNode_t($2, $4));
+    }
+|
+    VAR_NAME ASSIGN ast_logic_node SEMICOLON
     {
         $$ = new AssignNode_t($1, $3);
     }

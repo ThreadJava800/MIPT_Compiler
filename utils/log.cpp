@@ -9,7 +9,7 @@ bool initLogging(const char *const logfile_name)
 {
     if (logfile_name == NULL)
     {
-        fprintf(stderr, "Invalid filename: '%s'!\n", logfile_name);
+        USER_ERR("Invalid filename: '%s'!\n", logfile_name);
         return false;
     }
     

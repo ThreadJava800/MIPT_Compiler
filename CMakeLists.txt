@@ -33,11 +33,28 @@ ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
 add_library(logging.o OBJECT ${Compiler_SOURCE_DIR}/utils/log.cpp)
 
 add_library(
-    frontend.o
+    ast.o
     OBJECT 
-    ${Compiler_SOURCE_DIR}/frontend/frontend.cpp 
-    ${BISON_MyParser_OUTPUTS} 
+    ${Compiler_SOURCE_DIR}/frontend/ast.cpp 
+    )
+target_include_directories(ast.o PRIVATE ${Compiler_SOURCE_DIR}/utils/)
+
+add_library(
+    flex.o
+    OBJECT
     ${FLEX_MyScanner_OUTPUTS}
+    )
+
+add_library(
+    bison.o
+    OBJECT
+    ${BISON_MyParser_OUTPUTS}
+    )
+
+add_library(
+    frontend.o
+    OBJECT
+    ${Compiler_SOURCE_DIR}/frontend/frontend.cpp
     )
 target_include_directories(frontend.o PRIVATE ${Compiler_SOURCE_DIR}/utils/)
 
@@ -51,6 +68,9 @@ target_include_directories(
 add_executable(
     compiler
     $<TARGET_OBJECTS:logging.o>
+    $<TARGET_OBJECTS:flex.o>
+    $<TARGET_OBJECTS:bison.o>
+    $<TARGET_OBJECTS:ast.o>
     $<TARGET_OBJECTS:frontend.o>
     $<TARGET_OBJECTS:main.o>
 )

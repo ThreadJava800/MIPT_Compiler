@@ -1,22 +1,40 @@
 #pragma once
 
 #include <fstream>
-#include <vector>
+#include <map>
+#include <string>
 
 #include "ast.hpp"
 
-bool proceedFrontEnd(std::istream& source_file);
-void graphDump(const ProgramNode *node);
-
 class Driver_t
 {
-private:
-    std::vector<AstValue_t> variables;
-    const AstNode_t *root;
+public:
+    ProgramNode_t *root;
 
 public:
     explicit Driver_t()
         :
-            root(new AstNode_t())
+            root(new ProgramNode_t())
         {}
+
+    Driver_t(const Driver_t&) = delete;
+    Driver_t &operator=(const Driver_t&) = delete;
+    Driver_t(Driver_t&&) = delete;
+    Driver_t &operator=(Driver_t&&) = delete;
+
+    void graphDump();
+    bool proceedFrontEnd(std::istream& source_file);
+    void interpret();
+
+    ~Driver_t()
+    {
+        delete root;
+    }
+
+    static AstValue_t getVariableValue(std::string var_name);
+    static void createVariable(std::string var_name);
+    static void setVariableValue(std::string var_name, const AstValue_t value);
+
+private:
+    void graphNode(const AstNode_t *node, FILE *tempFile);
 };

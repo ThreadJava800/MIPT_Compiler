@@ -6,17 +6,15 @@
 #include <string>
 #include <vector>
 
-#define DEBUG
+class Driver_t;
 
 using AstValue_t = int64_t;
 
 class AstNode_t
 {
-#if defined (DEBUG)
-public:
-#else
+friend Driver_t;
+
 protected:
-#endif
     std::vector<const AstNode_t*> children_vec;
 
 public:
@@ -39,15 +37,13 @@ public:
         }
     }
 
-#if defined (DEBUG)
-    virtual void printFunc(FILE *printFile) const {}
-#endif
+    virtual void graphDumpLabel(FILE *printFile) const = 0;
 };
 
-class ProgramNode : public AstNode_t
+class ProgramNode_t : public AstNode_t
 {
 public:
-    explicit ProgramNode()
+    explicit ProgramNode_t()
         :
             AstNode_t()
         {}
@@ -57,10 +53,12 @@ public:
         children_vec.push_back(child);
     }
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "PROGRAM_ENTRY");
     }
+
+    void interpret();
 };
 
 class NonTerminalNode_t : public AstNode_t
@@ -71,6 +69,11 @@ public:
         :
             AstNode_t(children...)
         {}
+
+    void graphDumpLabel(FILE *printFile) const override {}
+
+    virtual AstValue_t interpret() const = 0;
+    virtual ~NonTerminalNode_t() {}
 };
 
 class VariableNode_t : public NonTerminalNode_t
@@ -85,10 +88,12 @@ public:
             name(std::move(name_))
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "VARIABLE %s", name.c_str());
     }
+
+    AstValue_t interpret() const override;
 };
 
 class ValueNode_t : public NonTerminalNode_t
@@ -103,10 +108,12 @@ public:
             value(std::move(value_))
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "VALUE %d", value);
     }
+
+    AstValue_t interpret() const override;
 };
 
 class AndNode_t : public NonTerminalNode_t
@@ -120,10 +127,12 @@ public:
             NonTerminalNode_t(left, right)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "AND");
     }
+
+    AstValue_t interpret() const override;
 };
 
 class OrNode_t : public NonTerminalNode_t
@@ -137,10 +146,12 @@ public:
             NonTerminalNode_t(left, right)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "OR");
     }
+
+    AstValue_t interpret() const override;
 };
 
 enum class ComparatorOperators
@@ -168,10 +179,12 @@ public:
             oper  (oper_)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "COMPARE %d", oper);
     }
+
+    AstValue_t interpret() const override;
 };
 
 enum class ArithmeticOperators
@@ -198,10 +211,12 @@ public:
             oper  (oper_)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "ARITHMETICS %d", oper);
     }
+
+    AstValue_t interpret() const override;
 };
 
 class NotNode_t : public NonTerminalNode_t
@@ -212,10 +227,12 @@ public:
             NonTerminalNode_t(child)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "NOT");
     }
+
+    AstValue_t interpret() const override;
 };
 
 class RuleNode_t : public AstNode_t
@@ -226,37 +243,69 @@ public:
         :
             AstNode_t(children...)
         {}
+
+    virtual void interpret() const = 0;
+    virtual ~RuleNode_t() {}
+};
+
+class NopRuleNode_t : public RuleNode_t
+{
+public:
+    template<typename... Args>
+    explicit NopRuleNode_t(Args... children)
+        :
+            RuleNode_t(children...)
+        {}
+
+    void graphDumpLabel(FILE *printFile) const override
+    {
+        fprintf(printFile, "NOP");
+    }
+
+    void interpret() const override;
 };
 
 class AssignNode_t : public RuleNode_t
 {
+private:
+    std::string name;
+
 public:
     explicit AssignNode_t(
-            const VariableNode_t *variable,
+            std::string name_,
             const NonTerminalNode_t *value
             )
         :
-            RuleNode_t(variable, value)
+            RuleNode_t(value),
+            name(name_)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
-        fprintf(printFile, "ASSIGN");
+        fprintf(printFile, "ASSIGN %s", name.c_str());
     }
+
+    void interpret() const override;
 };
 
 class DeclareNode_t : public RuleNode_t
 {
+private:
+    std::string name;
+
 public:
-    explicit DeclareNode_t(const VariableNode_t *variable_)
+    explicit DeclareNode_t(const std::string name_)
         :
-            RuleNode_t(variable_)
+            RuleNode_t(),
+            name(std::move(name_))
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
-        fprintf(printFile, "DECLARE");
+        fprintf(printFile, "DECLARE %s", name.c_str());
     }
+
+    void interpret() const override;
 };
 
 class PrintNode_t : public RuleNode_t
@@ -267,24 +316,28 @@ public:
             RuleNode_t(child)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "PRINT");
     }
+
+    void interpret() const override;
 };
 
 class IfNode_t : public RuleNode_t
 {
 public:
-    explicit IfNode_t(const NonTerminalNode_t *if_case, const AstNode_t *expr)
+    explicit IfNode_t(const NonTerminalNode_t *if_case, const RuleNode_t *expr)
         :
             RuleNode_t(if_case, expr)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "IF");
     }
+
+    void interpret() const override;
 };
 
 class IfElseNode_t : public RuleNode_t
@@ -292,15 +345,17 @@ class IfElseNode_t : public RuleNode_t
 public:
     explicit IfElseNode_t(
             const NonTerminalNode_t *if_case,
-            const AstNode_t *true_expr,
-            const AstNode_t *false_expr
+            const RuleNode_t *true_expr,
+            const RuleNode_t *false_expr
             )
         :
             RuleNode_t(if_case, true_expr, false_expr)
         {}
 
-    void printFunc(FILE *printFile) const override
+    void graphDumpLabel(FILE *printFile) const override
     {
         fprintf(printFile, "IF + ELSE");
     }
+
+    void interpret() const override;
 };

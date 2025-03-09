@@ -1,48 +1,14 @@
-#include <FlexLexer.h>
 #include <cstdio>
+#include <FlexLexer.h>
+#include <string>
 
 #include "log.hpp"
 #include "frontend.hpp"
 #include "parser.hpp"
 
+static std::map<std::string, AstValue_t> variables;
+
 yyFlexLexer *flexer = NULL;
-
-static void graphNode(const AstNode_t *node, FILE *tempFile) {
-    fprintf(
-                tempFile, 
-                "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
-                node
-            );
-
-    node->printFunc(tempFile);
-    
-    fprintf(tempFile, "}\"];\n");
-
-    for (const auto child : node->children_vec)
-    {
-        graphNode(child, tempFile);
-    }
-    for (const auto child : node->children_vec)
-    {
-        fprintf(tempFile, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", node, child);
-    }
-}
-
-void graphDump(const ProgramNode *node) {
-    if (!node) return;
-
-    FILE *tempFile = fopen("temp.dot", "w");
-    fprintf(tempFile, "digraph tree {\n");
-    fprintf(tempFile, "\trankdir=HR;\n");
-    if (!tempFile) return;
-
-    graphNode(node, tempFile);
-
-    fprintf(tempFile, "}");
-    fclose(tempFile);
-
-    system("dot -Tsvg temp.dot > graph.png && xdg-open graph.png");
-}
 
 int yylex
 (
@@ -52,7 +18,7 @@ int yylex
 {
     if (flexer == NULL)
     {
-        DBG_ERR("Invalid resources!\n");
+        DEV_DBG_ERR("Invalid resources!\n");
     }
 
     yylloc->begin.line = flexer->lineno();
@@ -70,22 +36,95 @@ void yy::parser::error
     const std::string& msg
 )
 {
-    std::cerr << "Unexpected character in line(" << loc.begin.line << "): " << msg << "'\n";
+    USER_ERR("Unexpected character in line(%d): %s\n", loc.begin.line, msg.c_str());
     exit(-1);
 }
 
-bool proceedFrontEnd(std::istream& source_file)
+AstValue_t Driver_t::getVariableValue(std::string var_name)
+{
+    return variables[var_name];
+}
+
+void Driver_t::createVariable(std::string var_name)
+{
+    variables[var_name] = 0;
+}
+
+void Driver_t::setVariableValue(std::string var_name, const AstValue_t value)
+{
+    if (variables.count(var_name))
+    {
+        variables[var_name] = value;
+    }
+    else
+    {
+        USER_ERR("Variable (%s) was not created!\n", var_name.c_str());
+    }
+}
+
+void Driver_t::graphNode(const AstNode_t *node, FILE *tempFile)
+{
+    fprintf(
+                tempFile, 
+                "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
+                node
+            );
+
+    node->graphDumpLabel(tempFile);
+    
+    fprintf(tempFile, "}\"];\n");
+
+    for (const auto child : node->children_vec)
+    {
+        graphNode(child, tempFile);
+    }
+    for (const auto child : node->children_vec)
+    {
+        fprintf(tempFile, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", node, child);
+    }
+}
+
+void Driver_t::graphDump()
+{
+    if (!root) {
+        DEV_DBG_ERR("root == NULL\n");
+        return;
+    }
+
+    FILE *tempFile = fopen("temp.dot", "w");
+    fprintf(tempFile, "digraph tree {\n");
+    fprintf(tempFile, "\trankdir=HR;\n");
+    if (!tempFile) 
+    {
+        DEV_DBG_ERR("failed to create .dot file!\n");
+        return;
+    }
+
+    graphNode(root, tempFile);
+
+    fprintf(tempFile, "}");
+    fclose(tempFile);
+
+    system("dot -Tsvg temp.dot > graph.png && xdg-open graph.png");
+}
+
+bool Driver_t::proceedFrontEnd(std::istream& source_file)
 {
     flexer = new yyFlexLexer(&source_file);
     if (flexer == nullptr)
     {
-        DBG_ERR("Failed to allocate resources!\n");
+        DEV_DBG_ERR("Failed to allocate resources!\n");
         return false;
     }
 
-    yy::parser parser;
+    yy::parser parser(*this);
     parser.parse();
 
     delete flexer;
     return true;
+}
+
+void Driver_t::interpret()
+{
+    root->interpret();
 }

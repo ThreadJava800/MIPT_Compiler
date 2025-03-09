@@ -6,12 +6,12 @@
 
 int main(int argc, char **argv)
 {
+    Driver_t driver;
+
     if (!initLogging("compiler_log.txt"))
     {
         fprintf(stderr, "Failed to init log library!\n");
     }
-
-    DBG_ERR("GO FUCK YOURSELF");
 
     if (argc != 2)
     {
@@ -19,10 +19,12 @@ int main(int argc, char **argv)
     }
     std::ifstream user_input(argv[1]);
     if(!user_input) {
-        fprintf(stderr, "Cannot open file: %s\n", argv[1]);
+        USER_ERR("Cannot open file: %s\n", argv[1]);
         return -1;
     }
-    proceedFrontEnd(user_input);
+    driver.proceedFrontEnd(user_input);
+    driver.graphDump();
+    driver.interpret();
 
     if (!deinitLogging())
     {
