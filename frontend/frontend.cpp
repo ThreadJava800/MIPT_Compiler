@@ -36,13 +36,20 @@ void yy::parser::error
     const std::string& msg
 )
 {
-    USER_ERR("Unexpected character in line(%d): %s\n", loc.begin.line, msg.c_str());
-    exit(-1);
+    USER_ABORT("Unexpected character in line(%d): %s\n", loc.begin.line, msg.c_str());
 }
 
 AstValue_t Driver_t::getVariableValue(std::string var_name)
 {
-    return variables[var_name];
+    if (variables.count(var_name) != 0)
+    {
+        return variables[var_name];
+    }
+    else
+    {
+        USER_ABORT("Variable (%s) was not created!\n", var_name.c_str());
+    }
+    return 0;   // should not reach this code
 }
 
 void Driver_t::createVariable(std::string var_name)
@@ -52,13 +59,13 @@ void Driver_t::createVariable(std::string var_name)
 
 void Driver_t::setVariableValue(std::string var_name, const AstValue_t value)
 {
-    if (variables.count(var_name))
+    if (variables.count(var_name) != 0)
     {
         variables[var_name] = value;
     }
     else
     {
-        USER_ERR("Variable (%s) was not created!\n", var_name.c_str());
+        USER_ABORT("Variable (%s) was not created!\n", var_name.c_str());
     }
 }
 
@@ -84,7 +91,7 @@ void Driver_t::graphNode(const AstNode_t *node, FILE *tempFile)
     }
 }
 
-void Driver_t::graphDump()
+void Driver_t::graphDump(const char *image_name)
 {
     if (!root) {
         DEV_DBG_ERR("root == NULL\n");
@@ -105,7 +112,11 @@ void Driver_t::graphDump()
     fprintf(tempFile, "}");
     fclose(tempFile);
 
-    system("dot -Tsvg temp.dot > graph.png && xdg-open graph.png");
+    char command[1024] = {0};
+    snprintf(command, sizeof(command), "dot -Tsvg temp.dot > %s && xdg-open %s", image_name, image_name);
+
+    system(command);
+    system("rm temp.dot");
 }
 
 bool Driver_t::proceedFrontEnd(std::istream& source_file)

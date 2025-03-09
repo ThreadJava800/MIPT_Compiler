@@ -1,7 +1,11 @@
-declare x = 6;
+declare x = (12 * 36) / (4 + 12);
+print(x);
 
-if (x == 6) {
-    print(15);
-} else {
-    print(14);
+if (x == 27)
+{
+    print(-42);
+}
+else
+{
+    print(-1);
 }

@@ -3,10 +3,6 @@
 %define api.value.type variant
 
 %code top {
-    #include <cassert>
-    #include <cstdlib>
-    #include <vector>
-
     #include "frontend.hpp"
 }
 
@@ -63,12 +59,6 @@
 %type <const NonTerminalNode_t*> ast_node_not
 
 %%
-
-program_entry:
-    all_expr
-    {
-    }
-;
 
 all_expr:
     %empty

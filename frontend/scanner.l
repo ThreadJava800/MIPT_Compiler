@@ -29,7 +29,7 @@ declare                     return yy::parser::token::DECLARE;
 "||"                        return yy::parser::token::OR;
 
 [a-zA-Z_][a-zA-Z_0-9_]*     return yy::parser::token::VAR_NAME;
-[0-9]+                      return yy::parser::token::NUMBER;
+[-]?[0-9]+                      return yy::parser::token::NUMBER;
 
 "("                         return yy::parser::token::LBRACKET;
 ")"                         return yy::parser::token::RBRACKET;

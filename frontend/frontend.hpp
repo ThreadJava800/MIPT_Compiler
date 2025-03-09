@@ -22,7 +22,7 @@ public:
     Driver_t(Driver_t&&) = delete;
     Driver_t &operator=(Driver_t&&) = delete;
 
-    void graphDump();
+    void graphDump(const char *image_name);
     bool proceedFrontEnd(std::istream& source_file);
     void interpret();
 
