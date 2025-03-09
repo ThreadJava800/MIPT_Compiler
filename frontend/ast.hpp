@@ -56,14 +56,20 @@ public:
     {
         children_vec.push_back(child);
     }
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "PROGRAM_ENTRY");
+    }
 };
 
 class NonTerminalNode_t : public AstNode_t
 {
 public:
-    explicit NonTerminalNode_t()
+    template<typename... Args>
+    explicit NonTerminalNode_t(Args... children)
         :
-            AstNode_t()
+            AstNode_t(children...)
         {}
 };
 
@@ -103,6 +109,115 @@ public:
     }
 };
 
+class AndNode_t : public NonTerminalNode_t
+{
+public:
+    explicit AndNode_t(
+        const NonTerminalNode_t *left,
+        const NonTerminalNode_t *right
+        )
+        :
+            NonTerminalNode_t(left, right)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "AND");
+    }
+};
+
+class OrNode_t : public NonTerminalNode_t
+{
+public:
+    explicit OrNode_t(
+        const NonTerminalNode_t *left,
+        const NonTerminalNode_t *right
+        )
+        :
+            NonTerminalNode_t(left, right)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "OR");
+    }
+};
+
+enum class ComparatorOperators
+{
+    LESS,
+    LESS_OR_EQ,
+    MORE,
+    MORE_OR_EQ,
+    EQ
+};
+
+class ComparatorNode_t : public NonTerminalNode_t
+{
+private:
+    ComparatorOperators oper;
+
+public:
+    explicit ComparatorNode_t(
+        const ComparatorOperators oper_,
+        const NonTerminalNode_t *left_,
+        const NonTerminalNode_t *right_
+        )
+        :
+            NonTerminalNode_t(left_, right_),
+            oper  (oper_)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "COMPARE %d", oper);
+    }
+};
+
+enum class ArithmeticOperators
+{
+    ADD,
+    SUB,
+    MUL,
+    DIV
+};
+
+class ArithmeticNode_t : public NonTerminalNode_t
+{
+private:
+    ArithmeticOperators oper;
+
+public:
+    explicit ArithmeticNode_t(
+        const ArithmeticOperators oper_,
+        const NonTerminalNode_t *left_,
+        const NonTerminalNode_t *right_
+        )
+        :
+            NonTerminalNode_t(left_, right_),
+            oper  (oper_)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "ARITHMETICS %d", oper);
+    }
+};
+
+class NotNode_t : public NonTerminalNode_t
+{
+public:
+    explicit NotNode_t(const NonTerminalNode_t *child)
+        :
+            NonTerminalNode_t(child)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "NOT");
+    }
+};
+
 class RuleNode_t : public AstNode_t
 {
 public:
@@ -118,7 +233,7 @@ class AssignNode_t : public RuleNode_t
 public:
     explicit AssignNode_t(
             const VariableNode_t *variable,
-            const ValueNode_t *value
+            const NonTerminalNode_t *value
             )
         :
             RuleNode_t(variable, value)
@@ -141,5 +256,51 @@ public:
     void printFunc(FILE *printFile) const override
     {
         fprintf(printFile, "DECLARE");
+    }
+};
+
+class PrintNode_t : public RuleNode_t
+{
+public:
+    explicit PrintNode_t(const NonTerminalNode_t *child)
+        :
+            RuleNode_t(child)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "PRINT");
+    }
+};
+
+class IfNode_t : public RuleNode_t
+{
+public:
+    explicit IfNode_t(const NonTerminalNode_t *if_case, const AstNode_t *expr)
+        :
+            RuleNode_t(if_case, expr)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "IF");
+    }
+};
+
+class IfElseNode_t : public RuleNode_t
+{
+public:
+    explicit IfElseNode_t(
+            const NonTerminalNode_t *if_case,
+            const AstNode_t *true_expr,
+            const AstNode_t *false_expr
+            )
+        :
+            RuleNode_t(if_case, true_expr, false_expr)
+        {}
+
+    void printFunc(FILE *printFile) const override
+    {
+        fprintf(printFile, "IF + ELSE");
     }
 };
