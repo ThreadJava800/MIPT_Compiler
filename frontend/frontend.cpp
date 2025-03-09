@@ -1,9 +1,48 @@
 #include <FlexLexer.h>
+#include <cstdio>
 
 #include "log.hpp"
+#include "frontend.hpp"
 #include "parser.hpp"
 
 yyFlexLexer *flexer = NULL;
+
+static void graphNode(const AstNode_t *node, FILE *tempFile) {
+    fprintf(
+                tempFile, 
+                "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
+                node
+            );
+
+    node->printFunc(tempFile);
+    
+    fprintf(tempFile, "}\"];\n");
+
+    for (const auto child : node->children_vec)
+    {
+        graphNode(child, tempFile);
+    }
+    for (const auto child : node->children_vec)
+    {
+        fprintf(tempFile, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", node, child);
+    }
+}
+
+void graphDump(const ProgramNode *node) {
+    if (!node) return;
+
+    FILE *tempFile = fopen("temp.dot", "w");
+    fprintf(tempFile, "digraph tree {\n");
+    fprintf(tempFile, "\trankdir=HR;\n");
+    if (!tempFile) return;
+
+    graphNode(node, tempFile);
+
+    fprintf(tempFile, "}");
+    fclose(tempFile);
+
+    system("dot -Tsvg temp.dot > graph.png && xdg-open graph.png");
+}
 
 int yylex
 (
