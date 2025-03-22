@@ -52,3 +52,10 @@ bool Driver_t::proceedFrontEnd(std::istream& source_file)
     delete flexer;
     return true;
 }
+
+void Driver_t::interpret()
+{
+    DEV_ASSERT(root == nullptr);
+
+    root->accept(interpreter);
+}

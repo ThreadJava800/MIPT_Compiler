@@ -81,7 +81,7 @@ int main(int argc, const char **argv)
     }
     if (settings.interpret_mode)
     {
-        // driver.interpret();
+        driver.interpret();
     }
 
     if (!deinitLogging())

@@ -5,11 +5,13 @@
 #include <string>
 
 #include "ast.hpp"
+#include "interpreter.hpp"
 
 class Driver_t
 {
 public:
     ProgramNode_t *root;
+    Interpreter interpreter;
 
 public:
     explicit Driver_t()

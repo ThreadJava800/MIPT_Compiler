@@ -6,7 +6,10 @@
 #include <string>
 #include <vector>
 
-// #include "visitor.hpp"
+#include "visitor.hpp"
+
+class Interpreter;
+#define DEFINE_FRIENDS friend Interpreter;
 
 using AstValue_t = int64_t;
 
@@ -20,23 +23,34 @@ public:
     AstNode_t(AstNode_t&&) = delete;
     AstNode_t &operator=(AstNode_t&&) = delete;
 
-    virtual ~AstNode_t() {}
+    virtual ~AstNode_t() = default;
+    virtual void accept(Visitor& visitor) const = 0;
+};
 
-    // virtual void accept(Visitor& visitor) const
-    // {
-    //     visitor.visit(*this);
-    // }
+class NonTerminalNode_t : public AstNode_t
+{
+public:
+    explicit NonTerminalNode_t() = default;
+    virtual ~NonTerminalNode_t() = default;
+};
+
+class RuleNode_t : public AstNode_t
+{
+public:
+    explicit RuleNode_t() = default;
+    virtual ~RuleNode_t() = default;
 };
 
 class ProgramNode_t : public AstNode_t
 {
+DEFINE_FRIENDS
 private:
-    std::vector<const AstNode_t*> children_vec;
+    std::vector<const RuleNode_t*> children_vec;
 
 public:
     explicit ProgramNode_t() = default;
 
-    void addChild(const AstNode_t *child)
+    void addChild(const RuleNode_t *child)
     {
         children_vec.push_back(child);
     }
@@ -48,17 +62,16 @@ public:
             delete child;
         }
     }
-};
 
-class NonTerminalNode_t : public AstNode_t
-{
-public:
-    explicit NonTerminalNode_t() = default;
-    virtual ~NonTerminalNode_t() = default;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class VariableNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 protected:
     std::string name;
 
@@ -67,10 +80,16 @@ public:
         :
             name(std::move(name_))
     {}
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class ValueNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 protected:
     const AstValue_t value;
 
@@ -80,10 +99,16 @@ public:
             NonTerminalNode_t(),
             value(std::move(value_))
     {}
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class AndNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *left;
     const NonTerminalNode_t *right;
@@ -97,10 +122,22 @@ public:
             left(left_),
             right(right_)
     {}
+
+    ~AndNode_t()
+    {
+        delete left;
+        delete right;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class OrNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *left;
     const NonTerminalNode_t *right;
@@ -114,6 +151,17 @@ public:
             left(left_),
             right(right_)
     {}
+
+    ~OrNode_t()
+    {
+        delete left;
+        delete right;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 enum class ComparatorOperators
@@ -127,6 +175,7 @@ enum class ComparatorOperators
 
 class ComparatorNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *left;
     const NonTerminalNode_t *right;
@@ -143,6 +192,17 @@ public:
             right(right_),
             oper(oper_)
     {}
+
+    ~ComparatorNode_t()
+    {
+        delete left;
+        delete right;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 enum class ArithmeticOperators
@@ -155,6 +215,7 @@ enum class ArithmeticOperators
 
 class ArithmeticNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *left;
     const NonTerminalNode_t *right;
@@ -171,10 +232,22 @@ public:
             right(right_),
             oper(oper_)
     {}
+
+    ~ArithmeticNode_t()
+    {
+        delete left;
+        delete right;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class NotNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *child;
 
@@ -183,19 +256,23 @@ public:
         :
             child(child_)
     {}
-};
 
-class RuleNode_t : public AstNode_t
-{
-public:
-    explicit RuleNode_t() = default;
-    virtual ~RuleNode_t() = default;
+    ~NotNode_t()
+    {
+        delete child;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class NopRuleNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
-    std::vector<const AstNode_t*> children_vec;
+    std::vector<const RuleNode_t*> children_vec;
 
 public:
     template<typename... Args>
@@ -203,10 +280,24 @@ public:
     {
         (children_vec.push_back(children), ...);
     }
+
+    ~NopRuleNode_t()
+    {
+        for (const auto child : children_vec)
+        {
+            delete child;
+        }
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class AssignNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *value;
     std::string name;
@@ -220,10 +311,21 @@ public:
             value(value_),
             name(name_)
     {}
+
+    ~AssignNode_t()
+    {
+        delete value;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class DeclareNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     std::string name;
 
@@ -232,10 +334,16 @@ public:
         :
             name(std::move(name_))
     {}
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class PrintNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *child;
 
@@ -244,10 +352,21 @@ public:
         :
             child(child_)
     {}
+
+    ~PrintNode_t()
+    {
+        delete child;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class IfNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *if_case;
     const RuleNode_t *expr;
@@ -258,10 +377,22 @@ public:
             if_case(if_case_),
             expr(expr_)
     {}
+
+    ~IfNode_t()
+    {
+        delete if_case;
+        delete expr;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class IfElseNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     const NonTerminalNode_t *if_case;
     const RuleNode_t *true_expr;
@@ -278,4 +409,16 @@ public:
            true_expr(true_expr_),
            false_expr(false_expr_)
     {}
+
+    ~IfElseNode_t()
+    {
+        delete if_case;
+        delete true_expr;
+        delete false_expr;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };

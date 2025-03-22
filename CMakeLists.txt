@@ -1,8 +1,8 @@
 project(Compiler)
 
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-#add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
-#add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
+add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
+add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
 
 add_link_options(-lboost_program_options)
 
@@ -47,7 +47,7 @@ target_include_directories(
     ${Compiler_SOURCE_DIR}/visitors/ 
     ${Compiler_SOURCE_DIR}/frontend/
     ${Compiler_SOURCE_DIR}/driver/
-)
+    )
 
 add_library(
     bison.o
@@ -59,28 +59,42 @@ target_include_directories(
     ${Compiler_SOURCE_DIR}/visitors/ 
     ${Compiler_SOURCE_DIR}/frontend/
     ${Compiler_SOURCE_DIR}/driver/
-)
+    )
 
 add_library(
     driver.o
     OBJECT
     ${Compiler_SOURCE_DIR}/driver/driver.cpp
     )
-target_include_directories(driver.o PRIVATE ${Compiler_SOURCE_DIR}/utils/ ${Compiler_SOURCE_DIR}/frontend/)
+target_include_directories(
+    driver.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/utils/ 
+    ${Compiler_SOURCE_DIR}/frontend/ 
+    ${Compiler_SOURCE_DIR}/visitors/
+    )
 
 add_library(
     asm_printer.o
     OBJECT
     ${Compiler_SOURCE_DIR}/visitors/print.cpp
     )
-target_include_directories(asm_printer.o PRIVATE ${Compiler_SOURCE_DIR}/frontend/)
+target_include_directories(
+    asm_printer.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/utils/ 
+    ${Compiler_SOURCE_DIR}/frontend/
+    )
 
 add_library(
     interpreter.o
     OBJECT
     ${Compiler_SOURCE_DIR}/visitors/interpreter.cpp
     )
-target_include_directories(interpreter.o PRIVATE ${Compiler_SOURCE_DIR}/frontend/)
+target_include_directories(
+    interpreter.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/utils/ 
+    ${Compiler_SOURCE_DIR}/frontend/
+    ${Compiler_SOURCE_DIR}/visitors/
+    )
 
 add_library(main.o OBJECT ${Compiler_SOURCE_DIR}/main.cpp)
 target_include_directories(
@@ -88,7 +102,8 @@ target_include_directories(
     ${Compiler_SOURCE_DIR}/utils/
     ${Compiler_SOURCE_DIR}/frontend/
     ${Compiler_SOURCE_DIR}/driver/
-)
+    ${Compiler_SOURCE_DIR}/visitors/
+    )
 
 add_executable(
     compiler
