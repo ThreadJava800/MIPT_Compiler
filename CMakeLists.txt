@@ -1,8 +1,8 @@
 project(Compiler)
 
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
-add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
+#add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
+#add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
 
 add_link_options(-lboost_program_options)
 
@@ -13,7 +13,7 @@ set(
     ${Compiler_SOURCE_DIR}/frontend/parser.hpp
     ${Compiler_SOURCE_DIR}/utils/log.hpp
     ${Compiler_SOURCE_DIR}/visitors/interpreter.hpp
-    ${Compiler_SOURCE_DIR}/visitors/printer.hpp
+    ${Compiler_SOURCE_DIR}/visitors/graphDump.hpp
     )
 
 find_package(BISON)
@@ -74,14 +74,15 @@ target_include_directories(
     )
 
 add_library(
-    asm_printer.o
+    graphDump.o
     OBJECT
-    ${Compiler_SOURCE_DIR}/visitors/print.cpp
+    ${Compiler_SOURCE_DIR}/visitors/graphDump.cpp
     )
 target_include_directories(
-    asm_printer.o PRIVATE 
+    graphDump.o PRIVATE 
     ${Compiler_SOURCE_DIR}/utils/ 
     ${Compiler_SOURCE_DIR}/frontend/
+    ${Compiler_SOURCE_DIR}/visitors/
     )
 
 add_library(
@@ -111,7 +112,7 @@ add_executable(
     $<TARGET_OBJECTS:flex.o>
     $<TARGET_OBJECTS:bison.o>
     $<TARGET_OBJECTS:driver.o>
-    $<TARGET_OBJECTS:asm_printer.o>
+    $<TARGET_OBJECTS:graphDump.o>
     $<TARGET_OBJECTS:interpreter.o>
     $<TARGET_OBJECTS:main.o>
 )

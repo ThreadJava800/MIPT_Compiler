@@ -195,6 +195,5 @@ void Interpreter::visit(const IfElseNode_t &node)
     else
     {
         node.false_expr->accept(*this);
-    }
-    
+    } 
 }

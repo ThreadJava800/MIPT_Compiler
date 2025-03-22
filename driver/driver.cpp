@@ -59,3 +59,10 @@ void Driver_t::interpret()
 
     root->accept(interpreter);
 }
+
+void Driver_t::graphDump(const char *image_name)
+{
+    DEV_ASSERT(root == nullptr);
+
+    graph_dumper.createGraph(image_name, *root);
+}

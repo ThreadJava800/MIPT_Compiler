@@ -9,7 +9,8 @@
 #include "visitor.hpp"
 
 class Interpreter;
-#define DEFINE_FRIENDS friend Interpreter;
+class GraphDumper;
+#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper;
 
 using AstValue_t = int64_t;
 
