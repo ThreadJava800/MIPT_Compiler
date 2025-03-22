@@ -3,7 +3,7 @@
 %define api.value.type variant
 
 %code top {
-    #include "frontend.hpp"
+    #include "driver.hpp"
 }
 
 %code provides {

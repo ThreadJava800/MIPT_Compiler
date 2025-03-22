@@ -4,8 +4,8 @@
 #include <iostream>
 #include <string>
 
+#include "driver.hpp"
 #include "log.hpp"
-#include "frontend.hpp"
 
 namespace arg_parser = boost::program_options;
 
@@ -77,11 +77,11 @@ int main(int argc, const char **argv)
 
     if (settings.graph_dump_file_name != "")
     {
-        driver.graphDump(settings.graph_dump_file_name.c_str());
+        // driver.graphDump(settings.graph_dump_file_name.c_str());
     }
     if (settings.interpret_mode)
     {
-        driver.interpret();
+        // driver.interpret();
     }
 
     if (!deinitLogging())

@@ -30,11 +30,4 @@ public:
     {
         delete root;
     }
-
-    static AstValue_t getVariableValue(std::string var_name);
-    static void createVariable(std::string var_name);
-    static void setVariableValue(std::string var_name, const AstValue_t value);
-
-private:
-    void graphNode(const AstNode_t *node, FILE *tempFile);
 };
