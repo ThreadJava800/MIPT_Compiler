@@ -6,30 +6,57 @@
 #include <string>
 #include <vector>
 
-class Driver_t;
+#include "visitor.hpp"
+
+class Interpreter;
+class GraphDumper;
+#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper;
 
 using AstValue_t = int64_t;
 
 class AstNode_t
 {
-friend Driver_t;
-
-protected:
-    std::vector<const AstNode_t*> children_vec;
-
 public:
-    template<typename... Args>
-    explicit AstNode_t(Args... children)
-    {
-        (children_vec.push_back(children), ...);
-    }
+    explicit AstNode_t() = default;
 
     AstNode_t(const AstNode_t&) = delete;
     AstNode_t &operator=(const AstNode_t&) = delete;
     AstNode_t(AstNode_t&&) = delete;
     AstNode_t &operator=(AstNode_t&&) = delete;
 
-    virtual ~AstNode_t()
+    virtual ~AstNode_t() = default;
+    virtual void accept(Visitor& visitor) const = 0;
+};
+
+class NonTerminalNode_t : public AstNode_t
+{
+public:
+    explicit NonTerminalNode_t() = default;
+    virtual ~NonTerminalNode_t() = default;
+};
+
+class RuleNode_t : public AstNode_t
+{
+public:
+    explicit RuleNode_t() = default;
+    virtual ~RuleNode_t() = default;
+};
+
+class ProgramNode_t : public AstNode_t
+{
+DEFINE_FRIENDS
+private:
+    std::vector<const RuleNode_t*> children_vec;
+
+public:
+    explicit ProgramNode_t() = default;
+
+    void addChild(const RuleNode_t *child)
+    {
+        children_vec.push_back(child);
+    }
+
+    ~ProgramNode_t()
     {
         for (const auto child : children_vec)
         {
@@ -37,67 +64,33 @@ public:
         }
     }
 
-    virtual void graphDumpLabel(FILE *printFile) const = 0;
-};
-
-class ProgramNode_t : public AstNode_t
-{
-public:
-    explicit ProgramNode_t()
-        :
-            AstNode_t()
-        {}
-
-    void addChild(const AstNode_t *child)
+    void accept(Visitor& visitor) const override
     {
-        children_vec.push_back(child);
+        visitor.visit(*this);
     }
-
-    void graphDumpLabel(FILE *printFile) const override
-    {
-        fprintf(printFile, "PROGRAM_ENTRY");
-    }
-
-    void interpret();
-};
-
-class NonTerminalNode_t : public AstNode_t
-{
-public:
-    template<typename... Args>
-    explicit NonTerminalNode_t(Args... children)
-        :
-            AstNode_t(children...)
-        {}
-
-    void graphDumpLabel(FILE *printFile) const override {}
-
-    virtual AstValue_t interpret() const = 0;
-    virtual ~NonTerminalNode_t() {}
 };
 
 class VariableNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 protected:
     std::string name;
 
 public:
     explicit VariableNode_t(const std::string name_)
         :
-            NonTerminalNode_t(),
             name(std::move(name_))
-        {}
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    void accept(Visitor& visitor) const override
     {
-        fprintf(printFile, "VARIABLE %s", name.c_str());
+        visitor.visit(*this);
     }
-
-    AstValue_t interpret() const override;
 };
 
 class ValueNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 protected:
     const AstValue_t value;
 
@@ -106,52 +99,70 @@ public:
         :
             NonTerminalNode_t(),
             value(std::move(value_))
-        {}
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    void accept(Visitor& visitor) const override
     {
-        fprintf(printFile, "VALUE %d", value);
+        visitor.visit(*this);
     }
-
-    AstValue_t interpret() const override;
 };
 
 class AndNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *left;
+    const NonTerminalNode_t *right;
+
 public:
     explicit AndNode_t(
-        const NonTerminalNode_t *left,
-        const NonTerminalNode_t *right
+        const NonTerminalNode_t *left_,
+        const NonTerminalNode_t *right_
         )
         :
-            NonTerminalNode_t(left, right)
-        {}
+            left(left_),
+            right(right_)
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~AndNode_t()
     {
-        fprintf(printFile, "AND");
+        delete left;
+        delete right;
     }
 
-    AstValue_t interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class OrNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *left;
+    const NonTerminalNode_t *right;
+
 public:
     explicit OrNode_t(
-        const NonTerminalNode_t *left,
-        const NonTerminalNode_t *right
+        const NonTerminalNode_t *left_,
+        const NonTerminalNode_t *right_
         )
         :
-            NonTerminalNode_t(left, right)
-        {}
+            left(left_),
+            right(right_)
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~OrNode_t()
     {
-        fprintf(printFile, "OR");
+        delete left;
+        delete right;
     }
 
-    AstValue_t interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 enum class ComparatorOperators
@@ -165,8 +176,11 @@ enum class ComparatorOperators
 
 class ComparatorNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
-    ComparatorOperators oper;
+    const NonTerminalNode_t *left;
+    const NonTerminalNode_t *right;
+    const ComparatorOperators oper;
 
 public:
     explicit ComparatorNode_t(
@@ -175,16 +189,21 @@ public:
         const NonTerminalNode_t *right_
         )
         :
-            NonTerminalNode_t(left_, right_),
-            oper  (oper_)
-        {}
+            left(left_),
+            right(right_),
+            oper(oper_)
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~ComparatorNode_t()
     {
-        fprintf(printFile, "COMPARE %d", oper);
+        delete left;
+        delete right;
     }
 
-    AstValue_t interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 enum class ArithmeticOperators
@@ -197,8 +216,11 @@ enum class ArithmeticOperators
 
 class ArithmeticNode_t : public NonTerminalNode_t
 {
+DEFINE_FRIENDS
 private:
-    ArithmeticOperators oper;
+    const NonTerminalNode_t *left;
+    const NonTerminalNode_t *right;
+    const ArithmeticOperators oper;
 
 public:
     explicit ArithmeticNode_t(
@@ -207,155 +229,197 @@ public:
         const NonTerminalNode_t *right_
         )
         :
-            NonTerminalNode_t(left_, right_),
-            oper  (oper_)
-        {}
+            left(left_),
+            right(right_),
+            oper(oper_)
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~ArithmeticNode_t()
     {
-        fprintf(printFile, "ARITHMETICS %d", oper);
+        delete left;
+        delete right;
     }
 
-    AstValue_t interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class NotNode_t : public NonTerminalNode_t
 {
-public:
-    explicit NotNode_t(const NonTerminalNode_t *child)
-        :
-            NonTerminalNode_t(child)
-        {}
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *child;
 
-    void graphDumpLabel(FILE *printFile) const override
+public:
+    explicit NotNode_t(const NonTerminalNode_t *child_)
+        :
+            child(child_)
+    {}
+
+    ~NotNode_t()
     {
-        fprintf(printFile, "NOT");
+        delete child;
     }
 
-    AstValue_t interpret() const override;
-};
-
-class RuleNode_t : public AstNode_t
-{
-public:
-    template<typename... Args>
-    explicit RuleNode_t(Args... children)
-        :
-            AstNode_t(children...)
-        {}
-
-    virtual void interpret() const = 0;
-    virtual ~RuleNode_t() {}
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class NopRuleNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
+private:
+    std::vector<const RuleNode_t*> children_vec;
+
 public:
     template<typename... Args>
     explicit NopRuleNode_t(Args... children)
-        :
-            RuleNode_t(children...)
-        {}
-
-    void graphDumpLabel(FILE *printFile) const override
     {
-        fprintf(printFile, "NOP");
+        (children_vec.push_back(children), ...);
     }
 
-    void interpret() const override;
+    ~NopRuleNode_t()
+    {
+        for (const auto child : children_vec)
+        {
+            delete child;
+        }
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class AssignNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
+    const NonTerminalNode_t *value;
     std::string name;
 
 public:
     explicit AssignNode_t(
             std::string name_,
-            const NonTerminalNode_t *value
+            const NonTerminalNode_t *value_
             )
         :
-            RuleNode_t(value),
+            value(value_),
             name(name_)
-        {}
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~AssignNode_t()
     {
-        fprintf(printFile, "ASSIGN %s", name.c_str());
+        delete value;
     }
 
-    void interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class DeclareNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
 private:
     std::string name;
 
 public:
     explicit DeclareNode_t(const std::string name_)
         :
-            RuleNode_t(),
             name(std::move(name_))
-        {}
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    void accept(Visitor& visitor) const override
     {
-        fprintf(printFile, "DECLARE %s", name.c_str());
+        visitor.visit(*this);
     }
-
-    void interpret() const override;
 };
 
 class PrintNode_t : public RuleNode_t
 {
-public:
-    explicit PrintNode_t(const NonTerminalNode_t *child)
-        :
-            RuleNode_t(child)
-        {}
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *child;
 
-    void graphDumpLabel(FILE *printFile) const override
+public:
+    explicit PrintNode_t(const NonTerminalNode_t *child_)
+        :
+            child(child_)
+    {}
+
+    ~PrintNode_t()
     {
-        fprintf(printFile, "PRINT");
+        delete child;
     }
 
-    void interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class IfNode_t : public RuleNode_t
 {
-public:
-    explicit IfNode_t(const NonTerminalNode_t *if_case, const RuleNode_t *expr)
-        :
-            RuleNode_t(if_case, expr)
-        {}
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *if_case;
+    const RuleNode_t *expr;
 
-    void graphDumpLabel(FILE *printFile) const override
+public:
+    explicit IfNode_t(const NonTerminalNode_t *if_case_, const RuleNode_t *expr_)
+        :
+            if_case(if_case_),
+            expr(expr_)
+    {}
+
+    ~IfNode_t()
     {
-        fprintf(printFile, "IF");
+        delete if_case;
+        delete expr;
     }
 
-    void interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };
 
 class IfElseNode_t : public RuleNode_t
 {
+DEFINE_FRIENDS
+private:
+    const NonTerminalNode_t *if_case;
+    const RuleNode_t *true_expr;
+    const RuleNode_t *false_expr;
+
 public:
     explicit IfElseNode_t(
-            const NonTerminalNode_t *if_case,
-            const RuleNode_t *true_expr,
-            const RuleNode_t *false_expr
+            const NonTerminalNode_t *if_case_,
+            const RuleNode_t *true_expr_,
+            const RuleNode_t *false_expr_
             )
         :
-            RuleNode_t(if_case, true_expr, false_expr)
-        {}
+           if_case(if_case_),
+           true_expr(true_expr_),
+           false_expr(false_expr_)
+    {}
 
-    void graphDumpLabel(FILE *printFile) const override
+    ~IfElseNode_t()
     {
-        fprintf(printFile, "IF + ELSE");
+        delete if_case;
+        delete true_expr;
+        delete false_expr;
     }
 
-    void interpret() const override;
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
 };

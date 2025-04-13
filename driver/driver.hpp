@@ -5,11 +5,15 @@
 #include <string>
 
 #include "ast.hpp"
+#include "graphDump.hpp"
+#include "interpreter.hpp"
 
 class Driver_t
 {
 public:
     ProgramNode_t *root;
+    Interpreter interpreter;
+    GraphDumper graph_dumper;
 
 public:
     explicit Driver_t()
@@ -22,19 +26,12 @@ public:
     Driver_t(Driver_t&&) = delete;
     Driver_t &operator=(Driver_t&&) = delete;
 
-    void graphDump(const char *image_name);
     bool proceedFrontEnd(std::istream& source_file);
     void interpret();
+    void graphDump(const char *image_name);
 
     ~Driver_t()
     {
         delete root;
     }
-
-    static AstValue_t getVariableValue(std::string var_name);
-    static void createVariable(std::string var_name);
-    static void setVariableValue(std::string var_name, const AstValue_t value);
-
-private:
-    void graphNode(const AstNode_t *node, FILE *tempFile);
 };
