@@ -1,4 +1,5 @@
 project(Compiler)
+find_package(LLVM REQUIRED CONFIG)
 
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 #add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
@@ -14,6 +15,7 @@ set(
     ${Compiler_SOURCE_DIR}/utils/log.hpp
     ${Compiler_SOURCE_DIR}/visitors/interpreter.hpp
     ${Compiler_SOURCE_DIR}/visitors/graphDump.hpp
+    ${Compiler_SOURCE_DIR}/visitors/llvmIR.hpp
     )
 
 find_package(BISON)
@@ -97,6 +99,17 @@ target_include_directories(
     ${Compiler_SOURCE_DIR}/visitors/
     )
 
+add_library(
+    llvm_ir.o
+    OBJECT
+    ${Compiler_SOURCE_DIR}/visitors/llvmIR.cpp
+    )
+target_include_directories(
+    llvm_ir.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/frontend/
+    ${Compiler_SOURCE_DIR}/visitors/
+    )
+
 add_library(main.o OBJECT ${Compiler_SOURCE_DIR}/main.cpp)
 target_include_directories(
     main.o PRIVATE 
@@ -114,6 +127,9 @@ add_executable(
     $<TARGET_OBJECTS:driver.o>
     $<TARGET_OBJECTS:graphDump.o>
     $<TARGET_OBJECTS:interpreter.o>
+    $<TARGET_OBJECTS:llvm_ir.o>
     $<TARGET_OBJECTS:main.o>
 )
-target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR})
+target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR} ${LLVM_INCLUDE_DIRS})
+execute_process(COMMAND llvm-config --libs all OUTPUT_VARIABLE llvm_libs)
+target_link_libraries(compiler ${llvm_libs})

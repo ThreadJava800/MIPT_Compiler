@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 
 #include "driver.hpp"
@@ -12,8 +13,9 @@ namespace arg_parser = boost::program_options;
 struct ProgramSettings_t
 {
     bool interpret_mode;
-    const std::string input_file_name;
-    const std::string graph_dump_file_name;
+    std::string input_file_name;
+    std::optional<std::string> graph_dump_file_name;
+    std::optional<std::string> output_file_name;
 };
 
 static arg_parser::options_description createParser()
@@ -23,7 +25,8 @@ static arg_parser::options_description createParser()
         ("help", "print help message")
         ("input", arg_parser::value<std::string>()->required(), "path to source file")
         ("interpret", "interpret given program after parsing")
-        ("graph-dump", arg_parser::value<std::string>(), "create AST dump to the provided .png file");
+        ("graph-dump", arg_parser::value<std::string>(), "create AST dump to the provided .png file")
+        ("output", arg_parser::value<std::string>(), "path to .ll output file");
 
     return desc;
 }
@@ -41,19 +44,22 @@ static ProgramSettings_t parseCmd(const int argc, const char **argv, const arg_p
 
     arg_parser::notify(var_map);
 
+    ProgramSettings_t program_settings;
+    program_settings.interpret_mode = var_map.count("interpret") > 0;
+    program_settings.input_file_name = std::move(var_map["input"].as<std::string>());
+    program_settings.graph_dump_file_name = std::nullopt;
+    program_settings.output_file_name = std::nullopt;
+
     if (var_map.count("graph-dump") > 0)
     {
-        return ProgramSettings_t{
-            var_map.count("interpret") > 0,
-            var_map["input"].as<std::string>(),
-            var_map["graph-dump"].as<std::string>()
-        };
+        program_settings.graph_dump_file_name = std::move(var_map["graph-dump"].as<std::string>());
     }
-    return ProgramSettings_t{
-        var_map.count("interpret") > 0,
-        var_map["input"].as<std::string>().c_str(),
-        ""
-    };
+
+    if (var_map.count("output") > 0)
+    {
+        program_settings.output_file_name = std::move(var_map["output"].as<std::string>());
+    }
+    return program_settings;
 }
 
 int main(int argc, const char **argv)
@@ -73,15 +79,21 @@ int main(int argc, const char **argv)
         USER_ERR("Cannot open file: %s\n", settings.input_file_name.c_str());
         return -1;
     }
-    driver.proceedFrontEnd(user_input);
+    const bool isSuccess = driver.proceedFrontEnd(user_input);
+    if (!isSuccess) {
+        return -1;
+    }
 
-    if (settings.graph_dump_file_name != "")
+    if (settings.graph_dump_file_name.has_value())
     {
-        driver.graphDump(settings.graph_dump_file_name.c_str());
+        driver.graphDump(settings.graph_dump_file_name.value().c_str());
     }
     if (settings.interpret_mode)
     {
         driver.interpret();
+    }
+    if (settings.output_file_name.has_value()) {
+        // todo
     }
 
     if (!deinitLogging())
