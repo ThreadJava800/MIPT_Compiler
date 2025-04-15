@@ -13,7 +13,6 @@ Implementation uses [flex](https://github.com/westes/flex) and [GNU Bison](https
 mkdir build
 cd build
 cmake ..
-cd ..
 make
 ```
 
