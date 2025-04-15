@@ -106,6 +106,7 @@ add_library(
     )
 target_include_directories(
     llvm_ir.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/utils/ 
     ${Compiler_SOURCE_DIR}/frontend/
     ${Compiler_SOURCE_DIR}/visitors/
     )

@@ -16,7 +16,9 @@ private:
     llvm::LLVMContext context;
     llvm::Module lmodule;
     llvm::IRBuilder<> builder;
-    std::map<std::string, llvm::Value*> values;
+    std::map<std::string, llvm::AllocaInst*> values;
+
+    llvm::Value *shared_llvm_value = nullptr;
 
 public:
     explicit LLVMBuilder();
@@ -39,18 +41,6 @@ public:
     void generateLLVMIR(const char *output_file, const ProgramNode_t &root);
 
 private:
-    llvm::Value *codegen(const ProgramNode_t &node);
-    llvm::Value *codegen(const VariableNode_t &node);
-    llvm::Value *codegen(const ValueNode_t &node);
-    llvm::Value *codegen(const AndNode_t &node);
-    llvm::Value *codegen(const OrNode_t &node);
-    llvm::Value *codegen(const ComparatorNode_t &node);
-    llvm::Value *codegen(const ArithmeticNode_t &node);
-    llvm::Value *codegen(const NotNode_t &node);
-    llvm::Value *codegen(const NopRuleNode_t &node);
-    llvm::Value *codegen(const AssignNode_t &node);
-    llvm::Value *codegen(const DeclareNode_t &node);
-    llvm::Value *codegen(const PrintNode_t &node);
-    llvm::Value *codegen(const IfNode_t &node);
-    llvm::Value *codegen(const IfElseNode_t &node);
+    void createPrintFunction();
+    void createStdFunctions();
 };

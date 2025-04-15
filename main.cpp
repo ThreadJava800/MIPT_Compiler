@@ -93,7 +93,7 @@ int main(int argc, const char **argv)
         driver.interpret();
     }
     if (settings.output_file_name.has_value()) {
-        // todo
+        driver.generateLLVMIR(settings.output_file_name.value().c_str());
     }
 
     if (!deinitLogging())
