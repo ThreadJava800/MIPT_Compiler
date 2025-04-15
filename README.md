@@ -27,3 +27,13 @@ More information can be found by running this command:
 ```bash
 ./compiler --help
 ```
+
+To generate llvm IR run:
+```bash
+./compiler --input ../example/test.txt --output o.ll
+```
+
+To create executable from generated llvm IR:
+```bash
+clang++ o.ll
+```
