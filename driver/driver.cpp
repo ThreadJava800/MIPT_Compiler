@@ -62,7 +62,16 @@ void Driver_t::interpret()
 
 void Driver_t::graphDump(const char *image_name)
 {
+    DEV_ASSERT(image_name == nullptr);
     DEV_ASSERT(root == nullptr);
 
     graph_dumper.createGraph(image_name, *root);
+}
+
+void Driver_t::generateLLVMIR(const char *output_file)
+{
+    DEV_ASSERT(output_file == nullptr);
+    DEV_ASSERT(root == nullptr);
+
+    llvm_builder.generateLLVMIR(output_file, *root);
 }

@@ -1,7 +1,7 @@
 declare x = (12 * 36) / (4 + 12);
 print(x);
 
-if (x == 27)
+if (!(x == 27))
 {
     print(-42);
 }
