@@ -7,7 +7,7 @@ It is a simple compiler of abstract language, which supports:
 4. IF-THEN-ELSE
 
 ## Build
-Implementation uses [flex](https://github.com/westes/flex) and [GNU Bison](https://www.gnu.org/software/bison/) as well as [boost library](https://www.boost.org/). so in order to build the project, you must have them installed.
+Implementation uses [flex](https://github.com/westes/flex) and [GNU Bison](https://www.gnu.org/software/bison/) as well as [boost library](https://www.boost.org/) and [LLVM](https://llvm.org/). so in order to build the project, you must have them installed.
 
 ```bash
 mkdir build
