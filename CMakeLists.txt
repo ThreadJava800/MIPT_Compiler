@@ -142,5 +142,5 @@ add_executable(
 target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR} ${LLVM_INCLUDE_DIRS})
 
 get_target_property(LLVM_LIB_PATH LLVM LOCATION)
-message(STATUS "Linking againts: ${LLVM_LIB_PATH} ${Boost_INCLUDE_DIRS}")
+message(STATUS "Linking againts: ${LLVM_LIB_PATH} ${Boost_LIBRARIES}")
 target_link_libraries(compiler ${LLVM_LIB_PATH} ${Boost_LIBRARIES})
