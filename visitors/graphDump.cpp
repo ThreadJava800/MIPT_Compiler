@@ -39,7 +39,7 @@ void GraphDumper::visit(const ValueNode_t &node)
         "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
         &node
     );
-    fprintf(dot_file, "VALUE %d", node.value);
+    fprintf(dot_file, "VALUE %ld", node.value);
     fprintf(dot_file, "}\"];\n");
 }
 
@@ -93,7 +93,7 @@ void GraphDumper::visit(const ComparatorNode_t &node)
         "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
         &node
     );
-    fprintf(dot_file, "COMPARE %d", node.oper);
+    fprintf(dot_file, "COMPARE %d", (int)node.oper);
     fprintf(dot_file, "}\"];\n");
 
     node.left->accept(*this);
@@ -113,7 +113,7 @@ void GraphDumper::visit(const ArithmeticNode_t &node)
         "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
         &node
     );
-    fprintf(dot_file, "ARITHMETICS %d", node.oper);
+    fprintf(dot_file, "ARITHMETICS %d", (int)node.oper);
     fprintf(dot_file, "}\"];\n");
 
     node.left->accept(*this);

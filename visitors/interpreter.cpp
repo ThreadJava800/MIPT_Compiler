@@ -162,7 +162,7 @@ void Interpreter::visit(const PrintNode_t &node)
     DEV_ASSERT(node.child == nullptr);
 
     node.child->accept(*this);
-    printf("%d\n", shared_value);
+    printf("%ld\n", shared_value);
 }
 
 void Interpreter::visit(const IfNode_t &node)

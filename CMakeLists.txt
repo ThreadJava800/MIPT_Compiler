@@ -1,8 +1,8 @@
-project(Compiler)
-find_package(LLVM REQUIRED CONFIG)
+cmake_minimum_required(VERSION 3.31.5)
 
+project(Compiler)
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
-#add_compile_options(-DDEBUG -g -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
+#add_compile_options(-DDEBUG -g -Wall -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
 #add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
 
 add_link_options(-lboost_program_options)
@@ -17,9 +17,16 @@ set(
     ${Compiler_SOURCE_DIR}/visitors/graphDump.hpp
     ${Compiler_SOURCE_DIR}/visitors/llvmIR.hpp
     )
-
+ 
 find_package(BISON)
+message(STATUS "Found BISON ${BISON_VERSION}")
+
 find_package(FLEX)
+message(STATUS "Found FLEX ${FLEX_VERSION}")
+
+find_package(LLVM REQUIRED CONFIG)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 BISON_TARGET(
     MyParser
@@ -132,5 +139,7 @@ add_executable(
     $<TARGET_OBJECTS:main.o>
 )
 target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR} ${LLVM_INCLUDE_DIRS})
-execute_process(COMMAND llvm-config --libs all OUTPUT_VARIABLE llvm_libs)
-target_link_libraries(compiler ${llvm_libs})
+
+get_target_property(LLVM_LIB_PATH LLVM LOCATION)
+message(STATUS "Linking againts: ${LLVM_LIB_PATH}")
+target_link_libraries(compiler ${LLVM_LIB_PATH})
