@@ -3,9 +3,7 @@ cmake_minimum_required(VERSION 3.31.5)
 project(Compiler)
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 #add_compile_options(-DDEBUG -g -Wall -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
-#add_link_options(-lboost_program_options -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
-
-add_link_options(-lboost_program_options)
+#add_link_options(-fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr)
 
 set(
     HEADERS
@@ -17,7 +15,10 @@ set(
     ${Compiler_SOURCE_DIR}/visitors/graphDump.hpp
     ${Compiler_SOURCE_DIR}/visitors/llvmIR.hpp
     )
- 
+
+find_package(Boost COMPONENTS program_options REQUIRED)
+message(STATUS "Found Boost::program_options ${Boost_VERSION}")
+
 find_package(BISON)
 message(STATUS "Found BISON ${BISON_VERSION}")
 
@@ -141,5 +142,5 @@ add_executable(
 target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR} ${LLVM_INCLUDE_DIRS})
 
 get_target_property(LLVM_LIB_PATH LLVM LOCATION)
-message(STATUS "Linking againts: ${LLVM_LIB_PATH}")
-target_link_libraries(compiler ${LLVM_LIB_PATH})
+message(STATUS "Linking againts: ${LLVM_LIB_PATH} ${Boost_INCLUDE_DIRS}")
+target_link_libraries(compiler ${LLVM_LIB_PATH} ${Boost_LIBRARIES})
