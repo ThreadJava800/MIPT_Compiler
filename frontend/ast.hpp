@@ -10,7 +10,8 @@
 
 class Interpreter;
 class GraphDumper;
-#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper;
+class LLVMBuilder;
+#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper; friend LLVMBuilder;
 
 using AstValue_t = int64_t;
 

@@ -7,6 +7,7 @@
 #include "ast.hpp"
 #include "graphDump.hpp"
 #include "interpreter.hpp"
+#include "llvmIR.hpp"
 
 class Driver_t
 {
@@ -14,6 +15,7 @@ public:
     ProgramNode_t *root;
     Interpreter interpreter;
     GraphDumper graph_dumper;
+    LLVMBuilder llvm_builder;
 
 public:
     explicit Driver_t()
@@ -29,6 +31,7 @@ public:
     bool proceedFrontEnd(std::istream& source_file);
     void interpret();
     void graphDump(const char *image_name);
+    void generateLLVMIR(const char *output_file);
 
     ~Driver_t()
     {
