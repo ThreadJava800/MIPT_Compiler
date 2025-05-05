@@ -3,6 +3,13 @@
 
 void Interpreter::visit(const ProgramNode_t &node)
 {
+    DEV_ASSERT(node.main_fun_trampoline == nullptr);
+    USER_ERR("Program node\n");
+    node.main_fun_trampoline->accept(*this);
+}
+
+void Interpreter::visit(const FunctionNode_t &node)
+{
     for (const auto child : node.children_vec)
     {
         child->accept(*this);
@@ -125,6 +132,20 @@ void Interpreter::visit(const NotNode_t &node)
 
     node.child->accept(*this);
     shared_value = !shared_value;
+}
+
+void Interpreter::visit(const CallFuncNode_t &node)
+{
+    DEV_ASSERT(functions == nullptr);
+
+    if (functions->count(node.callee_name) != 0)
+    {
+        (*functions)[node.callee_name]->accept(*this);
+    }
+    else
+    {
+        USER_ABORT("Function %s was not found!", node.callee_name.c_str());
+    }
 }
 
 void Interpreter::visit(const NopRuleNode_t &node)

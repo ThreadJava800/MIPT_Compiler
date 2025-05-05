@@ -8,17 +8,20 @@ LLVMBuilder::LLVMBuilder() :
 
 void LLVMBuilder::visit(const ProgramNode_t &node)
 {
+    DEV_ASSERT(node.main_fun_trampoline == nullptr);
+
     llvm::FunctionType *void_type = llvm::FunctionType::get(builder.getVoidTy(), false);
     llvm::Function *main_func = llvm::Function::Create(void_type, llvm::Function::ExternalLinkage, "main", lmodule);
     llvm::BasicBlock *program_entry = llvm::BasicBlock::Create(context, "", main_func);
+
     builder.SetInsertPoint(program_entry);
-
-    for (const auto child : node.children_vec)
-    {
-        child->accept(*this);
-    }
-
+    node.main_fun_trampoline->accept(*this);
     builder.CreateRetVoid();
+}
+
+void LLVMBuilder::visit(const FunctionNode_t &node)
+{
+
 }
 
 void LLVMBuilder::visit(const VariableNode_t &node)
@@ -139,6 +142,11 @@ void LLVMBuilder::visit(const NotNode_t &node)
     llvm::Value *value1 = shared_llvm_value;
 
     shared_llvm_value = builder.CreateNot(value1);
+}
+
+void LLVMBuilder::visit(const CallFuncNode_t &node)
+{
+
 }
 
 void LLVMBuilder::visit(const NopRuleNode_t &node)

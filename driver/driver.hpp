@@ -1,8 +1,6 @@
 #pragma once
 
 #include <fstream>
-#include <map>
-#include <string>
 
 #include "ast.hpp"
 #include "graphDump.hpp"
@@ -13,6 +11,7 @@ class Driver_t
 {
 public:
     ProgramNode_t *root;
+
     Interpreter interpreter;
     GraphDumper graph_dumper;
     LLVMBuilder llvm_builder;
@@ -20,7 +19,7 @@ public:
 public:
     explicit Driver_t()
         :
-            root(new ProgramNode_t())
+            root(nullptr)
         {}
 
     Driver_t(const Driver_t&) = delete;

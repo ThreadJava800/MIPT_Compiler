@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <optional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -43,34 +44,6 @@ public:
     virtual ~RuleNode_t() = default;
 };
 
-class ProgramNode_t : public AstNode_t
-{
-DEFINE_FRIENDS
-private:
-    std::vector<const RuleNode_t*> children_vec;
-
-public:
-    explicit ProgramNode_t() = default;
-
-    void addChild(const RuleNode_t *child)
-    {
-        children_vec.push_back(child);
-    }
-
-    ~ProgramNode_t()
-    {
-        for (const auto child : children_vec)
-        {
-            delete child;
-        }
-    }
-
-    void accept(Visitor& visitor) const override
-    {
-        visitor.visit(*this);
-    }
-};
-
 class VariableNode_t : public NonTerminalNode_t
 {
 DEFINE_FRIENDS
@@ -82,6 +55,113 @@ public:
         :
             name(std::move(name_))
     {}
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
+class FunctionNode_t : public AstNode_t
+{
+DEFINE_FRIENDS
+private:
+    std::vector<const RuleNode_t*> children_vec;
+    std::vector<const VariableNode_t*> parameters;
+    std::optional<const NonTerminalNode_t*> return_value;
+
+public:
+    explicit FunctionNode_t(
+        std::vector<const RuleNode_t*> children_vec,
+        std::vector<const VariableNode_t*> parameters,
+        std::optional<const NonTerminalNode_t*> return_value
+    ) :
+        children_vec(children_vec),
+        parameters(parameters),
+        return_value(return_value)
+    {}
+
+    ~FunctionNode_t()
+    {
+        for (const auto child : children_vec)
+        {
+            delete child;
+        }
+        for (const auto param : parameters)
+        {
+            delete param;
+        }
+        if (return_value.has_value())
+        {
+            delete return_value.value();
+        }
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
+class CallFuncNode_t : public RuleNode_t
+{
+DEFINE_FRIENDS
+private:
+    std::string callee_name;
+    std::vector<const NonTerminalNode_t*> parameters;
+
+public:
+    explicit CallFuncNode_t(
+        const std::string callee_name_,
+        std::vector<const NonTerminalNode_t*> func_params_
+    ) :
+        callee_name(callee_name_),
+        parameters(func_params_)
+    {}
+
+    ~CallFuncNode_t()
+    {
+        for (const auto param : parameters)
+        {
+            delete param;
+        }
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
+class ProgramNode_t : public AstNode_t
+{
+DEFINE_FRIENDS
+private:
+    const CallFuncNode_t *main_fun_trampoline;
+    std::map<std::string, const FunctionNode_t*> functions;
+
+public:
+    explicit ProgramNode_t(
+        const CallFuncNode_t *main_fun_trampoline_,
+        std::map<std::string, const FunctionNode_t*> functions_
+    ) :
+        main_fun_trampoline(main_fun_trampoline_),
+        functions(functions_)
+    {}
+
+    std::map<std::string, const FunctionNode_t*> *getFunctions()
+    {
+        return &functions;
+    }
+
+    ~ProgramNode_t()
+    {
+        for (const auto &[name, func] : functions)
+        {
+            delete func;
+        }
+        delete main_fun_trampoline;
+    }
 
     void accept(Visitor& visitor) const override
     {

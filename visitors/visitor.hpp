@@ -1,6 +1,7 @@
 #pragma once
 
 class ProgramNode_t;
+class FunctionNode_t;
 class VariableNode_t;
 class ValueNode_t;
 class AndNode_t;
@@ -8,6 +9,7 @@ class OrNode_t;
 class ComparatorNode_t;
 class ArithmeticNode_t;
 class NotNode_t;
+class CallFuncNode_t;
 class NopRuleNode_t;
 class AssignNode_t;
 class DeclareNode_t;
@@ -28,6 +30,7 @@ public:
     virtual ~Visitor() = default;
 
     virtual void visit(const ProgramNode_t &node) = 0;
+    virtual void visit(const FunctionNode_t &node) = 0;
     virtual void visit(const VariableNode_t &node) = 0;
     virtual void visit(const ValueNode_t &node) = 0;
     virtual void visit(const AndNode_t &node) = 0;
@@ -35,6 +38,7 @@ public:
     virtual void visit(const ComparatorNode_t &node) = 0;
     virtual void visit(const ArithmeticNode_t &node) = 0;
     virtual void visit(const NotNode_t &node) = 0;
+    virtual void visit(const CallFuncNode_t &node) = 0;
     virtual void visit(const NopRuleNode_t &node) = 0;
     virtual void visit(const AssignNode_t &node) = 0;
     virtual void visit(const DeclareNode_t &node) = 0;

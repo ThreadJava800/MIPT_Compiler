@@ -1,11 +1,19 @@
-declare x = (12 * 36) / (4 + 12);
-print(x);
-
-if (!(x == 27))
-{
-    print(-42);
+function void helper() {
+    print(52);
 }
-else
-{
-    print(-1);
+
+function void main() {
+    declare int x = (12 * 36) / (4 + 12);
+    print(x);
+
+    call helper(x);
+
+    if (!(x == 27))
+    {
+        print(-42);
+    }
+    else
+    {
+        print(-1);
+    }
 }

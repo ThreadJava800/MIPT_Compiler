@@ -13,6 +13,13 @@ if                          return yy::parser::token::IF;
 else                        return yy::parser::token::ELSE;
 print                       return yy::parser::token::PRINT;
 declare                     return yy::parser::token::DECLARE;
+function                    return yy::parser::token::FUNC_DECL;
+main                        return yy::parser::token::MAIN_DECL;
+call                        return yy::parser::token::CALL_FUNC;
+return                      return yy::parser::token::RETURN;
+
+int                         return yy::parser::token::TYPE_INT;
+void                        return yy::parser::token::TYPE_VOID;
 
 "="                         return yy::parser::token::ASSIGN;
 "+"                         return yy::parser::token::ADD;

@@ -92,7 +92,8 @@ int main(int argc, const char **argv)
     {
         driver.interpret();
     }
-    if (settings.output_file_name.has_value()) {
+    if (settings.output_file_name.has_value())
+    {
         driver.generateLLVMIR(settings.output_file_name.value().c_str());
     }
 
