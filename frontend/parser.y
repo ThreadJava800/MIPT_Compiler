@@ -107,6 +107,16 @@ expr:
         $$ = new CallFuncNode_t($2, $4);
     }
 |
+    RETURN SEMICOLON
+    {
+        $$ = new ReturnNode_t(std::nullopt);
+    }
+|
+    RETURN ast_logic_node SEMICOLON
+    {
+        $$ = new ReturnNode_t($2);
+    }
+|
     PRINT LBRACKET ast_logic_node RBRACKET SEMICOLON
     {
         $$ = new PrintNode_t($3);
@@ -167,12 +177,12 @@ many_parameters:
 func:
     FUNC_DECL TYPE_VOID VAR_NAME LBRACKET many_parameters RBRACKET LBRACE many_expr RBRACE
     {
-        $$ = { $3, new FunctionNode_t($8, $5, std::nullopt) };
+        $$ = { $3, new FunctionNode_t($8, $5) };
     }
 |
-    FUNC_DECL types VAR_NAME LBRACKET many_parameters RBRACKET LBRACE many_expr RETURN ast_logic_node SEMICOLON RBRACE
+    FUNC_DECL types VAR_NAME LBRACKET many_parameters RBRACKET LBRACE many_expr RBRACE
     {
-        $$ = { $3, new FunctionNode_t($8, $5, $10) };
+        $$ = { $3, new FunctionNode_t($8, $5) };
     }
 ;
 
@@ -192,7 +202,7 @@ all_func:
 main_func:
     FUNC_DECL TYPE_VOID MAIN_DECL LBRACKET RBRACKET LBRACE many_expr RBRACE
     {
-        $$ = new FunctionNode_t($7, {}, std::nullopt);
+        $$ = new FunctionNode_t($7, {});
     }
 ;
 

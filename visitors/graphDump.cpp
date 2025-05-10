@@ -179,6 +179,23 @@ void GraphDumper::visit(const CallFuncNode_t &node)
     fprintf(dot_file, "}\"];\n");
 }
 
+void GraphDumper::visit(const ReturnNode_t &node)
+{
+    fprintf(
+        dot_file,
+        "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
+        &node
+    );
+    fprintf(dot_file, "RETURN");
+    fprintf(dot_file, "}\"];\n");
+
+    if (node.ret_value.has_value())
+    {
+        node.ret_value.value()->accept(*this);
+        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, node.ret_value.value());
+    }
+}
+
 void GraphDumper::visit(const NopRuleNode_t &node)
 {
     fprintf(

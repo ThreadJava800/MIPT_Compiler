@@ -12,7 +12,11 @@
 class Interpreter;
 class GraphDumper;
 class LLVMBuilder;
-#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper; friend LLVMBuilder;
+class ScopeTreeBuilder;
+#define DEFINE_FRIENDS friend Interpreter;\
+                       friend GraphDumper;\
+                       friend LLVMBuilder;\
+                       friend ScopeTreeBuilder;
 
 using AstValue_t = int64_t;
 
@@ -68,17 +72,14 @@ DEFINE_FRIENDS
 private:
     std::vector<const RuleNode_t*> children_vec;
     std::vector<const VariableNode_t*> parameters;
-    std::optional<const NonTerminalNode_t*> return_value;
 
 public:
     explicit FunctionNode_t(
         std::vector<const RuleNode_t*> children_vec,
-        std::vector<const VariableNode_t*> parameters,
-        std::optional<const NonTerminalNode_t*> return_value
+        std::vector<const VariableNode_t*> parameters
     ) :
         children_vec(children_vec),
-        parameters(parameters),
-        return_value(return_value)
+        parameters(parameters)
     {}
 
     ~FunctionNode_t()
@@ -90,10 +91,6 @@ public:
         for (const auto param : parameters)
         {
             delete param;
-        }
-        if (return_value.has_value())
-        {
-            delete return_value.value();
         }
     }
 
@@ -133,6 +130,33 @@ public:
     }
 };
 
+class ReturnNode_t : public RuleNode_t
+{
+DEFINE_FRIENDS;
+private:
+    std::optional<const NonTerminalNode_t*> ret_value;
+
+public:
+    explicit ReturnNode_t(
+            const std::optional<const NonTerminalNode_t*> ret_value_
+        ) :
+        ret_value(ret_value_)
+    {}
+
+    ~ReturnNode_t()
+    {
+        if (ret_value.has_value())
+        {
+            delete ret_value.value();
+        }
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
 class ProgramNode_t : public AstNode_t
 {
 DEFINE_FRIENDS
@@ -158,7 +182,7 @@ public:
     {
         for (const auto &[name, func] : functions)
         {
-            delete func;
+            delete func;    
         }
         delete main_fun_trampoline;
     }

@@ -148,6 +148,11 @@ void Interpreter::visit(const CallFuncNode_t &node)
     }
 }
 
+void Interpreter::visit(const ReturnNode_t &node)
+{
+
+}
+
 void Interpreter::visit(const NopRuleNode_t &node)
 {
     for (const auto child : node.children_vec)

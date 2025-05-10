@@ -1,5 +1,6 @@
 function void helper() {
     print(52);
+    return 123;
 }
 
 function void main() {

@@ -149,6 +149,11 @@ void LLVMBuilder::visit(const CallFuncNode_t &node)
 
 }
 
+void LLVMBuilder::visit(const ReturnNode_t &node)
+{
+
+}
+
 void LLVMBuilder::visit(const NopRuleNode_t &node)
 {
     for (const auto child : node.children_vec)

@@ -108,6 +108,18 @@ target_include_directories(
     )
 
 add_library(
+    scope_tree.o
+    OBJECT
+    ${Compiler_SOURCE_DIR}/visitors/scope.cpp
+    )
+target_include_directories(
+    scope_tree.o PRIVATE 
+    ${Compiler_SOURCE_DIR}/utils/ 
+    ${Compiler_SOURCE_DIR}/frontend/
+    ${Compiler_SOURCE_DIR}/visitors/
+    )
+
+add_library(
     llvm_ir.o
     OBJECT
     ${Compiler_SOURCE_DIR}/visitors/llvmIR.cpp
@@ -137,6 +149,7 @@ add_executable(
     $<TARGET_OBJECTS:graphDump.o>
     $<TARGET_OBJECTS:interpreter.o>
     $<TARGET_OBJECTS:llvm_ir.o>
+    $<TARGET_OBJECTS:scope_tree.o>
     $<TARGET_OBJECTS:main.o>
 )
 target_include_directories(compiler PRIVATE ${Compiler_SOURCE_DIR} ${LLVM_INCLUDE_DIRS})

@@ -26,6 +26,7 @@ public:
     void visit(const ArithmeticNode_t &node) override;
     void visit(const NotNode_t &node) override;
     void visit(const CallFuncNode_t &node) override;
+    void visit(const ReturnNode_t &node) override;
     void visit(const NopRuleNode_t &node) override;
     void visit(const AssignNode_t &node) override;
     void visit(const DeclareNode_t &node) override;

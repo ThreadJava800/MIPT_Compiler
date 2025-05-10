@@ -10,6 +10,7 @@ class ComparatorNode_t;
 class ArithmeticNode_t;
 class NotNode_t;
 class CallFuncNode_t;
+class ReturnNode_t;
 class NopRuleNode_t;
 class AssignNode_t;
 class DeclareNode_t;
@@ -39,6 +40,7 @@ public:
     virtual void visit(const ArithmeticNode_t &node) = 0;
     virtual void visit(const NotNode_t &node) = 0;
     virtual void visit(const CallFuncNode_t &node) = 0;
+    virtual void visit(const ReturnNode_t &node) = 0;
     virtual void visit(const NopRuleNode_t &node) = 0;
     virtual void visit(const AssignNode_t &node) = 0;
     virtual void visit(const DeclareNode_t &node) = 0;

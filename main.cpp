@@ -7,6 +7,7 @@
 
 #include "driver.hpp"
 #include "log.hpp"
+#include "scope.hpp"
 
 namespace arg_parser = boost::program_options;
 
@@ -75,12 +76,14 @@ int main(int argc, const char **argv)
     }
 
     std::ifstream user_input(settings.input_file_name);
-    if(!user_input) {
+    if(!user_input)
+    {
         USER_ERR("Cannot open file: %s\n", settings.input_file_name.c_str());
         return -1;
     }
     const bool isSuccess = driver.proceedFrontEnd(user_input);
-    if (!isSuccess) {
+    if (!isSuccess)
+    {
         return -1;
     }
 
