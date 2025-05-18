@@ -1,11 +1,27 @@
-declare x = (12 * 36) / (4 + 12);
-print(x);
+{
+    declare int x = (12 * 36) / (4 + 12);
+    print(x);
 
-if (!(x == 27))
-{
-    print(-42);
-}
-else
-{
-    print(-1);
+    {
+        declare int x = 123;
+        print(x);
+    }
+
+    print(x);
+
+    {
+        declare int x = 124;
+        print(x);
+    }
+
+    print(x);
+
+    if (!(x == 27))
+    {
+        print(28);
+    }
+    else
+    {
+        print(-1);
+    }
 }

@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <optional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -11,7 +12,11 @@
 class Interpreter;
 class GraphDumper;
 class LLVMBuilder;
-#define DEFINE_FRIENDS friend Interpreter; friend GraphDumper; friend LLVMBuilder;
+class ScopeTreeBuilder;
+#define DEFINE_FRIENDS friend Interpreter;\
+                       friend GraphDumper;\
+                       friend LLVMBuilder;\
+                       friend ScopeTreeBuilder;
 
 using AstValue_t = int64_t;
 
@@ -43,34 +48,6 @@ public:
     virtual ~RuleNode_t() = default;
 };
 
-class ProgramNode_t : public AstNode_t
-{
-DEFINE_FRIENDS
-private:
-    std::vector<const RuleNode_t*> children_vec;
-
-public:
-    explicit ProgramNode_t() = default;
-
-    void addChild(const RuleNode_t *child)
-    {
-        children_vec.push_back(child);
-    }
-
-    ~ProgramNode_t()
-    {
-        for (const auto child : children_vec)
-        {
-            delete child;
-        }
-    }
-
-    void accept(Visitor& visitor) const override
-    {
-        visitor.visit(*this);
-    }
-};
-
 class VariableNode_t : public NonTerminalNode_t
 {
 DEFINE_FRIENDS
@@ -82,6 +59,33 @@ public:
         :
             name(std::move(name_))
     {}
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
+class ProgramNode_t : public AstNode_t
+{
+DEFINE_FRIENDS
+private:
+    std::vector<const RuleNode_t*> children;
+
+public:
+    explicit ProgramNode_t(
+            std::vector<const RuleNode_t*> children_
+        ) :
+        children(children_)
+    {}
+
+    ~ProgramNode_t()
+    {
+        for (const auto child : children)
+        {
+            delete child;
+        }
+    }
 
     void accept(Visitor& visitor) const override
     {
@@ -262,6 +266,31 @@ public:
     ~NotNode_t()
     {
         delete child;
+    }
+
+    void accept(Visitor& visitor) const override
+    {
+        visitor.visit(*this);
+    }
+};
+
+class NewScopeNode_t : public RuleNode_t
+{
+DEFINE_FRIENDS
+private:
+    std::vector<const RuleNode_t*> children_vec;
+
+public:
+    explicit NewScopeNode_t(const std::vector<const RuleNode_t*> children_)
+        : children_vec(children_)
+    {}
+
+    ~NewScopeNode_t()
+    {
+        for (const auto child : children_vec)
+        {
+            delete child;
+        }
     }
 
     void accept(Visitor& visitor) const override

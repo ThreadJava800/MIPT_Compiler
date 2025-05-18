@@ -11,13 +11,10 @@ void GraphDumper::visit(const ProgramNode_t &node)
     fprintf(dot_file, "PROGRAM_ENTRY");
     fprintf(dot_file, "}\"];\n");
 
-    for (const auto child : node.children_vec)
+    for (const auto fun_ptr : node.children)
     {
-        child->accept(*this);
-    }
-    for (const auto child : node.children_vec)
-    {
-        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, child);
+        fun_ptr->accept(*this);
+        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, fun_ptr);
     }
 }
 
@@ -138,6 +135,23 @@ void GraphDumper::visit(const NotNode_t &node)
     node.child->accept(*this);
 
     fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, node.child);
+}
+
+void GraphDumper::visit(const NewScopeNode_t &node)
+{
+    fprintf(
+        dot_file, 
+        "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
+        &node
+    );
+    fprintf(dot_file, "SCOPE START");
+    fprintf(dot_file, "}\"];\n");
+
+    for (const auto fun_ptr : node.children_vec)
+    {
+        fun_ptr->accept(*this);
+        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, fun_ptr);
+    }
 }
 
 void GraphDumper::visit(const NopRuleNode_t &node)

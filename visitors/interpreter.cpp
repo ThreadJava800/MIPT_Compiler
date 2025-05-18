@@ -3,7 +3,7 @@
 
 void Interpreter::visit(const ProgramNode_t &node)
 {
-    for (const auto child : node.children_vec)
+    for (const auto child : node.children)
     {
         child->accept(*this);
     }
@@ -125,6 +125,11 @@ void Interpreter::visit(const NotNode_t &node)
 
     node.child->accept(*this);
     shared_value = !shared_value;
+}
+
+void Interpreter::visit(const NewScopeNode_t &node)
+{
+
 }
 
 void Interpreter::visit(const NopRuleNode_t &node)

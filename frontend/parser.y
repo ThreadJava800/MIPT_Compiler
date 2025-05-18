@@ -16,6 +16,14 @@
 %parse-param { Driver_t &driver }
 
 %token DECLARE
+%token FUNC_DECL
+%token MAIN_DECL
+%token CALL_FUNC
+%token RETURN
+
+%token TYPE_INT
+%token TYPE_VOID
+
 %token <std::string> VAR_NAME
 %token <std::string> NUMBER
 
@@ -48,8 +56,8 @@
 %type <const VariableNode_t*> var_node
 %type <const ValueNode_t*> number_node
 %type <const RuleNode_t*> expr
-%type <ProgramNode_t*> all_expr
-%type <const NonTerminalNode_t*> ast_node_leaf;
+%type <std::vector<const RuleNode_t*>> many_expr
+%type <const NonTerminalNode_t*> ast_node_leaf
 %type <const NonTerminalNode_t*> ast_logic_node
 %type <const NonTerminalNode_t*> ast_node_and_or
 %type <const NonTerminalNode_t*> ast_node_compare
@@ -60,20 +68,26 @@
 
 %%
 
-all_expr:
-    %empty
+entry_rule:
+    LBRACE many_expr RBRACE
     {
-        $$ = driver.root;
+        driver.root = new ProgramNode_t({new NewScopeNode_t($2)});
     }
-|
-    all_expr expr
+;
+
+types:
+    TYPE_INT
     {
-        $1->addChild($2);
-        $$ = $1;
+
     }
 ;
 
 expr:
+    LBRACE many_expr RBRACE
+    {
+        $$ = new NewScopeNode_t($2);
+    }
+|
     PRINT LBRACKET ast_logic_node RBRACKET SEMICOLON
     {
         $$ = new PrintNode_t($3);
@@ -89,19 +103,32 @@ expr:
         $$ = new IfElseNode_t($3, $6, $10);
     }
 |
-    DECLARE VAR_NAME SEMICOLON
+    DECLARE types VAR_NAME SEMICOLON
     {
-        $$ = new DeclareNode_t($2);
+        $$ = new DeclareNode_t($3);
     }
 |
-    DECLARE VAR_NAME ASSIGN ast_logic_node SEMICOLON
+    DECLARE types VAR_NAME ASSIGN ast_logic_node SEMICOLON
     {
-        $$ = new NopRuleNode_t(new DeclareNode_t($2), new AssignNode_t($2, $4));
+        $$ = new NopRuleNode_t(new DeclareNode_t($3), new AssignNode_t($3, $5));
     }
 |
     VAR_NAME ASSIGN ast_logic_node SEMICOLON
     {
         $$ = new AssignNode_t($1, $3);
+    } 
+;
+
+many_expr:
+    %empty
+    {
+        $$ = std::vector<const RuleNode_t*>();
+    }
+|
+    many_expr expr
+    {
+        $1.push_back($2);
+        $$ = $1;
     }
 ;
 
