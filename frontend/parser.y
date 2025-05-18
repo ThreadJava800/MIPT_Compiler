@@ -57,11 +57,6 @@
 %type <const ValueNode_t*> number_node
 %type <const RuleNode_t*> expr
 %type <std::vector<const RuleNode_t*>> many_expr
-%type <const FunctionNode_t*> main_func
-%type <std::pair<std::string, const FunctionNode_t*>> func
-%type <std::map<std::string, const FunctionNode_t*>> all_func
-%type <std::vector<const NonTerminalNode_t*>> many_pass_parameters
-%type <std::vector<const VariableNode_t*>> many_parameters
 %type <const NonTerminalNode_t*> ast_node_leaf
 %type <const NonTerminalNode_t*> ast_logic_node
 %type <const NonTerminalNode_t*> ast_node_and_or
@@ -74,10 +69,9 @@
 %%
 
 entry_rule:
-    all_func main_func
+    LBRACE many_expr RBRACE
     {
-        $1["main"] = $2;
-        driver.root = new ProgramNode_t(new CallFuncNode_t("main", {}), $1);
+        driver.root = new ProgramNode_t({new NewScopeNode_t($2)});
     }
 ;
 
@@ -88,33 +82,10 @@ types:
     }
 ;
 
-many_pass_parameters:
-    %empty
-    {
-        $$ = std::vector<const NonTerminalNode_t*>();
-    }
-|
-    many_pass_parameters ast_logic_node
-    {
-        $1.push_back($2);
-        $$ = $1;
-    }
-;
-
 expr:
-    CALL_FUNC VAR_NAME LBRACKET many_pass_parameters RBRACKET SEMICOLON
+    LBRACE many_expr RBRACE
     {
-        $$ = new CallFuncNode_t($2, $4);
-    }
-|
-    RETURN SEMICOLON
-    {
-        $$ = new ReturnNode_t(std::nullopt);
-    }
-|
-    RETURN ast_logic_node SEMICOLON
-    {
-        $$ = new ReturnNode_t($2);
+        $$ = new NewScopeNode_t($2);
     }
 |
     PRINT LBRACKET ast_logic_node RBRACKET SEMICOLON
@@ -158,51 +129,6 @@ many_expr:
     {
         $1.push_back($2);
         $$ = $1;
-    }
-;
-
-many_parameters:
-    %empty
-    {
-        $$ = std::vector<const VariableNode_t*>();
-    }
-|
-    many_parameters types VAR_NAME
-    {
-        $1.push_back(new VariableNode_t($3));
-        $$ = $1;
-    }
-;
-
-func:
-    FUNC_DECL TYPE_VOID VAR_NAME LBRACKET many_parameters RBRACKET LBRACE many_expr RBRACE
-    {
-        $$ = { $3, new FunctionNode_t($8, $5) };
-    }
-|
-    FUNC_DECL types VAR_NAME LBRACKET many_parameters RBRACKET LBRACE many_expr RBRACE
-    {
-        $$ = { $3, new FunctionNode_t($8, $5) };
-    }
-;
-
-all_func:
-    %empty
-    {
-        $$ = std::map<std::string, const FunctionNode_t*>();
-    }
-|
-    all_func func
-    {
-        $1[$2.first] = $2.second;
-        $$ = $1;
-    }
-;
-
-main_func:
-    FUNC_DECL TYPE_VOID MAIN_DECL LBRACKET RBRACKET LBRACE many_expr RBRACE
-    {
-        $$ = new FunctionNode_t($7, {});
     }
 ;
 

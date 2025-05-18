@@ -17,7 +17,6 @@ public:
     {}
 
     void visit(const ProgramNode_t &node) override;
-    void visit(const FunctionNode_t &node) override;
     void visit(const VariableNode_t &node) override;
     void visit(const ValueNode_t &node) override;
     void visit(const AndNode_t &node) override;
@@ -25,8 +24,7 @@ public:
     void visit(const ComparatorNode_t &node) override;
     void visit(const ArithmeticNode_t &node) override;
     void visit(const NotNode_t &node) override;
-    void visit(const CallFuncNode_t &node) override;
-    void visit(const ReturnNode_t &node) override;
+    void visit(const NewScopeNode_t &node) override;
     void visit(const NopRuleNode_t &node) override;
     void visit(const AssignNode_t &node) override;
     void visit(const DeclareNode_t &node) override;

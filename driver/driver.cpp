@@ -57,7 +57,6 @@ void Driver_t::interpret()
 {
     DEV_ASSERT(root == nullptr);
 
-    interpreter.setFunctionsMap(root->getFunctions());
     root->accept(interpreter);
 }
 

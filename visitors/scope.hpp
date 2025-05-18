@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <functional>
+#include <map>
 #include <stack>
 #include <variant>
 #include <vector>
@@ -28,7 +29,7 @@ public:
         parent(parent_)
     {}
 
-    llvm::AllocaInst *getVariableByName(const std::string var_name);
+    llvm::AllocaInst *getVariableByName(const std::string var_name) const;
 
     ~Scope()
     {
@@ -44,26 +45,27 @@ class ScopeTreeBuilder : public Visitor
 private:
     Scope *root;
     Scope *current;
-    std::stack<Scope*> call_stack;
 
     llvm::LLVMContext &context;
     llvm::IRBuilder<> &builder;
+
+    std::map<const NewScopeNode_t*, const Scope*> scope_view_model;
 
 public:
     explicit ScopeTreeBuilder(
             llvm::LLVMContext &context_,
             llvm::IRBuilder<> &builder_
         ) :
-        root(new Scope(nullptr)),
-        current(root),
+        root(nullptr),
+        current(nullptr),
         context(context_),
         builder(builder_)
     {}
 
     void build(const ProgramNode_t &node);
+    llvm::AllocaInst *getVariable(const NewScopeNode_t *view_scope, const std::string var_name) const;
 
     void visit(const ProgramNode_t &node) override;
-    void visit(const FunctionNode_t &node) override;
     void visit(const VariableNode_t &node) override;
     void visit(const ValueNode_t &node) override;
     void visit(const AndNode_t &node) override;
@@ -71,8 +73,7 @@ public:
     void visit(const ComparatorNode_t &node) override;
     void visit(const ArithmeticNode_t &node) override;
     void visit(const NotNode_t &node) override;
-    void visit(const CallFuncNode_t &node) override;
-    void visit(const ReturnNode_t &node) override;
+    void visit(const NewScopeNode_t &node) override;
     void visit(const NopRuleNode_t &node) override;
     void visit(const AssignNode_t &node) override;
     void visit(const DeclareNode_t &node) override;

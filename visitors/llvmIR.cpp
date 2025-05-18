@@ -3,34 +3,27 @@
 
 LLVMBuilder::LLVMBuilder() :
     lmodule("MIPT language", context),
-    builder(context)
+    builder(context),
+    scope_tree(context, builder)
 {}
 
 void LLVMBuilder::visit(const ProgramNode_t &node)
 {
-    DEV_ASSERT(node.main_fun_trampoline == nullptr);
-
-    llvm::FunctionType *void_type = llvm::FunctionType::get(builder.getVoidTy(), false);
-    llvm::Function *main_func = llvm::Function::Create(void_type, llvm::Function::ExternalLinkage, "main", lmodule);
-    llvm::BasicBlock *program_entry = llvm::BasicBlock::Create(context, "", main_func);
-
-    builder.SetInsertPoint(program_entry);
-    node.main_fun_trampoline->accept(*this);
+    for (const auto child : node.children)
+    {
+        child->accept(*this);
+    }
     builder.CreateRetVoid();
-}
-
-void LLVMBuilder::visit(const FunctionNode_t &node)
-{
-
 }
 
 void LLVMBuilder::visit(const VariableNode_t &node)
 {
-    if (values.count(node.name) != 0)
+    try
     {
-        shared_llvm_value = builder.CreateLoad(values[node.name]->getAllocatedType(), values[node.name]);
+        auto var_ptr = scope_tree.getVariable(scope_stack.top(), node.name);
+        shared_llvm_value = builder.CreateLoad(var_ptr->getAllocatedType(), var_ptr);
     }
-    else
+    catch (...)
     {
         USER_ABORT("Variable (%s) was not created!\n", node.name.c_str());
     }
@@ -144,14 +137,16 @@ void LLVMBuilder::visit(const NotNode_t &node)
     shared_llvm_value = builder.CreateNot(value1);
 }
 
-void LLVMBuilder::visit(const CallFuncNode_t &node)
+void LLVMBuilder::visit(const NewScopeNode_t &node)
 {
+    scope_stack.push(&node);
 
-}
+    for (const auto child : node.children_vec)
+    {
+        child->accept(*this);
+    }
 
-void LLVMBuilder::visit(const ReturnNode_t &node)
-{
-
+    scope_stack.pop();
 }
 
 void LLVMBuilder::visit(const NopRuleNode_t &node)
@@ -169,11 +164,11 @@ void LLVMBuilder::visit(const AssignNode_t &node)
     node.value->accept(*this);
     llvm::Value *value = shared_llvm_value;
 
-    if (values.count(node.name) != 0)
+    try
     {
-        shared_llvm_value = builder.CreateStore(value, values[node.name]);
+        shared_llvm_value = builder.CreateStore(value, scope_tree.getVariable(scope_stack.top(), node.name));
     }
-    else
+    catch (...)
     {
         USER_ABORT("Variable (%s) was not created!\n", node.name.c_str());
     }
@@ -181,7 +176,7 @@ void LLVMBuilder::visit(const AssignNode_t &node)
 
 void LLVMBuilder::visit(const DeclareNode_t &node)
 {
-    values[node.name] = builder.CreateAlloca(llvm::Type::getInt64Ty(context));
+
 }
 
 void LLVMBuilder::visit(const PrintNode_t &node)
@@ -257,6 +252,13 @@ void LLVMBuilder::visit(const IfElseNode_t &node)
 
 void LLVMBuilder::generateLLVMIR(const char *output_file, const ProgramNode_t &root)
 {
+    llvm::FunctionType *void_type = llvm::FunctionType::get(builder.getVoidTy(), false);
+    llvm::Function *main_func = llvm::Function::Create(void_type, llvm::Function::ExternalLinkage, "main", lmodule);
+    llvm::BasicBlock *program_entry = llvm::BasicBlock::Create(context, "", main_func);
+
+    builder.SetInsertPoint(program_entry);
+    scope_tree.build(root);
+
     createStdFunctions();
     root.accept(*this);
     

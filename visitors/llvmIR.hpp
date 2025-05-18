@@ -8,23 +8,25 @@
 #include <map>
 
 #include "ast.hpp"
+#include "scope.hpp"
 #include "visitor.hpp"
 
 class LLVMBuilder : public Visitor
 {
 private:
+    std::stack<const NewScopeNode_t*> scope_stack;
+
     llvm::LLVMContext context;
     llvm::Module lmodule;
     llvm::IRBuilder<> builder;
-    std::map<std::string, llvm::AllocaInst*> values;
 
+    ScopeTreeBuilder scope_tree;
     llvm::Value *shared_llvm_value = nullptr;
 
 public:
     explicit LLVMBuilder();
 
     void visit(const ProgramNode_t &node) override;
-    void visit(const FunctionNode_t &node) override;
     void visit(const VariableNode_t &node) override;
     void visit(const ValueNode_t &node) override;
     void visit(const AndNode_t &node) override;
@@ -32,8 +34,7 @@ public:
     void visit(const ComparatorNode_t &node) override;
     void visit(const ArithmeticNode_t &node) override;
     void visit(const NotNode_t &node) override;
-    void visit(const CallFuncNode_t &node) override;
-    void visit(const ReturnNode_t &node) override;
+    void visit(const NewScopeNode_t &node) override;
     void visit(const NopRuleNode_t &node) override;
     void visit(const AssignNode_t &node) override;
     void visit(const DeclareNode_t &node) override;

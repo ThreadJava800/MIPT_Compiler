@@ -3,11 +3,11 @@
 #include "log.hpp"
 #include "scope.hpp"
 
-llvm::AllocaInst *Scope::getVariableByName(const std::string var_name)
+llvm::AllocaInst *Scope::getVariableByName(const std::string var_name) const
 {
     if (scope_vars.count(var_name) != 0)
     {
-        return scope_vars[var_name];
+        return scope_vars.at(var_name);
     }
 
     if (parent != nullptr)
@@ -19,37 +19,17 @@ llvm::AllocaInst *Scope::getVariableByName(const std::string var_name)
 
 void ScopeTreeBuilder::build(const ProgramNode_t &node)
 {
-    call_stack.push(root);
     visit(node);
+}
+
+llvm::AllocaInst *ScopeTreeBuilder::getVariable(const NewScopeNode_t *view_scope, const std::string var_name) const
+{
+    return scope_view_model.at(view_scope)->getVariableByName(var_name);
 }
 
 void ScopeTreeBuilder::visit(const ProgramNode_t &node)
 {
-    DEV_ASSERT(node.main_fun_trampoline == nullptr);
-
-    for (const auto &[fun_name, fun_ptr] : node.functions)
-    {
-        auto new_func_scope = new Scope(current);
-        current->children.push_back(new_func_scope);
-
-        call_stack.push(new_func_scope);
-        current = new_func_scope;
-
-        fun_ptr->accept(*this);
-    }
-    
-    const auto main_scope = new Scope(current);
-    current->children.push_back(main_scope);
-    node.main_fun_trampoline->accept(*this);
-}
-
-void ScopeTreeBuilder::visit(const FunctionNode_t &node)
-{
-    for (const auto param : node.parameters)
-    {
-        // current->scope_vars[param->name] = /* func param */
-    }
-    for (auto child : node.children_vec)
+    for (const auto child : node.children)
     {
         child->accept(*this);
     }
@@ -62,7 +42,7 @@ void ScopeTreeBuilder::visit(const VariableNode_t &node)
     {
         std::ignore = current->getVariableByName(node.name);
     }
-    catch(std::invalid_argument e)
+    catch(...)
     {
         USER_ABORT("Variable %s not found", node.name.c_str());
     }
@@ -116,14 +96,27 @@ void ScopeTreeBuilder::visit(const NotNode_t &node)
     node.child->accept(*this);
 }
 
-void ScopeTreeBuilder::visit(const CallFuncNode_t &node)
+void ScopeTreeBuilder::visit(const NewScopeNode_t &node)
 {
+    const auto new_scope = new Scope(current);
+    if (current == nullptr)
+    {
+        root = new_scope;
+    }
+    else
+    {
+        current->children.push_back(new_scope);
+    }
 
-}
+    current = new_scope;
 
-void ScopeTreeBuilder::visit(const ReturnNode_t &node)
-{
+    for (const auto child : node.children_vec)
+    {
+        child->accept(*this);
+    }
 
+    scope_view_model[&node] = new_scope;
+    current = current->parent;
 }
 
 void ScopeTreeBuilder::visit(const NopRuleNode_t &node)
@@ -153,6 +146,8 @@ void ScopeTreeBuilder::visit(const IfNode_t &node)
 {
     DEV_ASSERT(node.if_case == nullptr);
     DEV_ASSERT(node.expr == nullptr);
+
+    
 }
 
 void ScopeTreeBuilder::visit(const IfElseNode_t &node)

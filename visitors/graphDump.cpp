@@ -3,8 +3,6 @@
 
 void GraphDumper::visit(const ProgramNode_t &node)
 {
-    DEV_ASSERT(node.main_fun_trampoline == nullptr);
-
     fprintf(
         dot_file, 
         "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
@@ -13,39 +11,10 @@ void GraphDumper::visit(const ProgramNode_t &node)
     fprintf(dot_file, "PROGRAM_ENTRY");
     fprintf(dot_file, "}\"];\n");
 
-    fprintf(
-        dot_file, 
-        "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
-        node.main_fun_trampoline
-    );
-    fprintf(dot_file, "FUNCTION: main()");
-    fprintf(dot_file, "}\"];\n");
-    node.main_fun_trampoline->accept(*this);
-    fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, node.main_fun_trampoline);
-
-    for (const auto &[fun_name, fun_ptr] : node.functions)
+    for (const auto fun_ptr : node.children)
     {
-        fprintf(
-            dot_file, 
-            "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
-            fun_ptr
-        );
-        fprintf(dot_file, "FUNCTION: ");
-        fprintf(dot_file, fun_name.c_str());
-        fprintf(dot_file, "}\"];\n");
         fun_ptr->accept(*this);
-    }
-}
-
-void GraphDumper::visit(const FunctionNode_t &node)
-{
-    for (const auto child : node.children_vec)
-    {
-        child->accept(*this);
-    }
-    for (const auto child : node.children_vec)
-    {
-        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, child);
+        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, fun_ptr);
     }
 }
 
@@ -168,31 +137,20 @@ void GraphDumper::visit(const NotNode_t &node)
     fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, node.child);
 }
 
-void GraphDumper::visit(const CallFuncNode_t &node)
+void GraphDumper::visit(const NewScopeNode_t &node)
 {
     fprintf(
-        dot_file,
+        dot_file, 
         "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
         &node
     );
-    fprintf(dot_file, "CALL %s", node.callee_name.c_str());
-    fprintf(dot_file, "}\"];\n");
-}
-
-void GraphDumper::visit(const ReturnNode_t &node)
-{
-    fprintf(
-        dot_file,
-        "\tlabel%p[shape=record, style=\"rounded, filled\", fillcolor=red, label=\"{val: ",
-        &node
-    );
-    fprintf(dot_file, "RETURN");
+    fprintf(dot_file, "SCOPE START");
     fprintf(dot_file, "}\"];\n");
 
-    if (node.ret_value.has_value())
+    for (const auto fun_ptr : node.children_vec)
     {
-        node.ret_value.value()->accept(*this);
-        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, node.ret_value.value());
+        fun_ptr->accept(*this);
+        fprintf(dot_file, "\tlabel%p->label%p [color=\"red\", style=\"dashed\",arrowhead=\"none\"]", &node, fun_ptr);
     }
 }
 
